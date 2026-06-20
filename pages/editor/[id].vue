@@ -8,6 +8,7 @@ import type { PlantMaterial } from '~/types'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Palette, Tag, Sparkles, Scissors } from 'lucide-vue-next'
 import { removeBackground, imageFileToCanvas } from '~/utils/imageProcess'
+import type { ColorAdjustment } from '~/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -116,6 +117,16 @@ async function handleBgRemovalApply(dataUrl: string) {
     console.error('应用抠图效果失败:', e)
     ElMessage.error('应用抠图效果失败')
   }
+}
+
+function handleColorAdjustmentApply(adjustment: ColorAdjustment, isGlobal: boolean) {
+  fabricCanvasRef.value?.applyColorAdjustment(adjustment, isGlobal)
+}
+
+function handleColorAdjustmentReset(isGlobal: boolean) {
+  const defaultAdjustment: ColorAdjustment = { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
+  fabricCanvasRef.value?.applyColorAdjustment(defaultAdjustment, isGlobal)
+  ElMessage.success(isGlobal ? '已重置所有对象色彩' : '已恢复原始颜色')
 }
 
 watch(project, (newProject) => {
@@ -287,6 +298,19 @@ watch(project, (newProject) => {
             未选择对象
           </div>
         </div>
+
+        <ColorAdjustmentPanel
+          v-if="selectedObject"
+          mode="object"
+          @apply="handleColorAdjustmentApply"
+          @reset="handleColorAdjustmentReset"
+        />
+
+        <ColorAdjustmentPanel
+          mode="global"
+          @apply="handleColorAdjustmentApply"
+          @reset="handleColorAdjustmentReset"
+        />
       </div>
     </div>
   </div>

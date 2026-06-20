@@ -31,7 +31,7 @@ export { useFilters } from '../composables/useFilters';
 export { useMaterials } from '../composables/useMaterials';
 export { useProject } from '../composables/useProject';
 export { generateA4Layout, exportCanvasAsImage, downloadBlob, createProjectThumbnail } from '../utils/exportUtils';
-export { applyFiltersToSelected, createWatercolorFilter, createDiffuseFilter, createTextureFilter, createVintageFilter, convertGroupToImage, ensureImageObject, createFilterByType, applyFiltersToAllImages } from '../utils/filterEffects';
+export { processColorAdjustment, applyFiltersToSelected, createWatercolorFilter, createDiffuseFilter, createTextureFilter, createVintageFilter, convertGroupToImage, ensureImageObject, createFilterByType, applyFiltersToAllImages, applyColorAdjustment } from '../utils/filterEffects';
 export { extractPlantOutline, removeBackground, applyWatercolorEffect, applyDiffuseEffect, applyTextureEffect, applyVintageEffect, imageFileToCanvas, removeBackgroundKmeans, applyFeather, applyBrushStroke, dataUrlToCanvas, createInitialMask } from '../utils/imageProcess';
 export { sanitizeSvg, validateSvgSize, getSvgThumbnail, getPngThumbnail, readFileAsText, readFileAsDataURL } from '../utils/svgSecurity';
 export { addUserMaterial, updateUserMaterial, deleteUserMaterial, getUserMaterial, getAllUserMaterials, getUserMaterialsByCategory, getStats, formatSize, MAX_STORAGE_SIZE } from '../utils/userMaterialDB';

@@ -1,6 +1,138 @@
-import type { FilterConfig } from '~/types'
+import type { FilterConfig, ColorAdjustment } from '~/types'
 
-console.log('[filterEffects.ts v2] LOADED - CACHE FIXED 2026-06-20')
+console.log('[filterEffects.ts v3] LOADED - COLOR ADJUSTMENT 2026-06-20')
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255
+  g /= 255
+  b /= 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h = 0, s = 0
+  const l = (max + min) / 2
+
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      case b:
+        h = ((r - g) / d + 4) / 6
+        break
+    }
+  }
+
+  return [h * 360, s * 100, l * 100]
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h /= 360
+  s /= 100
+  l /= 100
+
+  let r, g, b
+
+  if (s === 0) {
+    r = g = b = l
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1 / 6) return p + (q - p) * 6 * t
+      if (t < 1 / 2) return q
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+      return p
+    }
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    r = hue2rgb(p, q, h + 1 / 3)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1 / 3)
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)]
+}
+
+function adjustHue(r: number, g: number, b: number, hueDelta: number): [number, number, number] {
+  const [h, s, l] = rgbToHsl(r, g, b)
+  let newH = h + hueDelta
+  if (newH > 180) newH -= 360
+  if (newH < -180) newH += 360
+  if (newH < 0) newH += 360
+  return hslToRgb(newH, s, l)
+}
+
+function adjustSaturation(r: number, g: number, b: number, satDelta: number): [number, number, number] {
+  const [h, s, l] = rgbToHsl(r, g, b)
+  let newS = s + satDelta
+  newS = Math.max(0, Math.min(100, newS))
+  return hslToRgb(h, newS, l)
+}
+
+function adjustBrightness(r: number, g: number, b: number, brightDelta: number): [number, number, number] {
+  const factor = 1 + brightDelta / 100
+  return [
+    Math.min(255, Math.max(0, Math.round(r * factor))),
+    Math.min(255, Math.max(0, Math.round(g * factor))),
+    Math.min(255, Math.max(0, Math.round(b * factor)))
+  ]
+}
+
+function adjustContrast(r: number, g: number, b: number, contrastDelta: number): [number, number, number] {
+  const factor = (259 * (contrastDelta + 255)) / (255 * (259 - contrastDelta))
+  return [
+    Math.min(255, Math.max(0, Math.round(factor * (r - 128) + 128))),
+    Math.min(255, Math.max(0, Math.round(factor * (g - 128) + 128))),
+    Math.min(255, Math.max(0, Math.round(factor * (b - 128) + 128)))
+  ]
+}
+
+export function processColorAdjustment(pixels: ImageData, adjustment: ColorAdjustment) {
+  const data = pixels.data
+  const { hue, saturation, brightness, contrast } = adjustment
+
+  const hasHue = hue !== 0
+  const hasSaturation = saturation !== 0
+  const hasBrightness = brightness !== 0
+  const hasContrast = contrast !== 0
+
+  if (!hasHue && !hasSaturation && !hasBrightness && !hasContrast) {
+    return
+  }
+
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 10) continue
+
+    let r = data[i]
+    let g = data[i + 1]
+    let b = data[i + 2]
+
+    if (hasHue) {
+      ;[r, g, b] = adjustHue(r, g, b, hue)
+    }
+    if (hasSaturation) {
+      ;[r, g, b] = adjustSaturation(r, g, b, saturation)
+    }
+    if (hasBrightness) {
+      ;[r, g, b] = adjustBrightness(r, g, b, brightness)
+    }
+    if (hasContrast) {
+      ;[r, g, b] = adjustContrast(r, g, b, contrast)
+    }
+
+    data[i] = r
+    data[i + 1] = g
+    data[i + 2] = b
+  }
+}
 
 let _isApplyingFilters = false
 let _pendingApplyArgs: any[] | null = null
@@ -982,4 +1114,231 @@ export async function applyFiltersToAllImages(
   }
   
   canvas.renderAll()
+}
+
+async function applyColorAdjustmentToImage(
+  fabric: any,
+  canvas: any,
+  obj: any,
+  adjustment: ColorAdjustment,
+  activeFilters: FilterConfig[]
+): Promise<void> {
+  if (!obj.getElement || !obj.setElement) return
+
+  if (!obj._originalElement) {
+    obj._originalElement = obj.getElement()
+  }
+  const sourceElement = obj._originalElement
+  if (!sourceElement) return
+
+  const width = obj._originalWidth || sourceElement.naturalWidth || sourceElement.width
+  const height = obj._originalHeight || sourceElement.naturalHeight || sourceElement.height
+  if (!width || !height) return
+
+  const processCanvas = document.createElement('canvas')
+  processCanvas.width = width
+  processCanvas.height = height
+  const processCtx = processCanvas.getContext('2d')!
+  processCtx.drawImage(sourceElement, 0, 0, width, height)
+
+  const hasColorAdjustment = adjustment.hue !== 0 || adjustment.saturation !== 0 || 
+    adjustment.brightness !== 0 || adjustment.contrast !== 0
+  const hasActiveFilters = activeFilters.length > 0
+
+  if (!hasColorAdjustment && !hasActiveFilters) {
+    const origW = obj._originalWidth || width
+    const origH = obj._originalHeight || height
+
+    const restoreCanvas = document.createElement('canvas')
+    restoreCanvas.width = origW
+    restoreCanvas.height = origH
+    const restoreCtx = restoreCanvas.getContext('2d')!
+
+    try {
+      restoreCtx.drawImage(sourceElement, 0, 0, origW, origH)
+    } catch (e) {
+      const sw = sourceElement.naturalWidth || sourceElement.width || origW
+      const sh = sourceElement.naturalHeight || sourceElement.height || origH
+      restoreCtx.drawImage(sourceElement, 0, 0, sw, sh, 0, 0, origW, origH)
+    }
+
+    const restoreDataUrl = restoreCanvas.toDataURL('image/png')
+    const originalLeft = obj.left
+    const originalTop = obj.top
+    const originalScaleX = obj.scaleX
+    const originalScaleY = obj.scaleY
+    const originalAngle = obj.angle
+    const originalOriginX = obj.originX || 'center'
+    const originalOriginY = obj.originY || 'center'
+    const originalOpacity = obj.opacity
+    const originalId = obj.id
+    const origElementRef = obj._originalElement
+    const origWidthRef = obj._originalWidth || width
+    const origHeightRef = obj._originalHeight || height
+
+    await new Promise<void>((resolve) => {
+      fabric.Image.fromURL(restoreDataUrl, (restoredImg: any) => {
+        restoredImg.set({
+          left: originalLeft,
+          top: originalTop,
+          scaleX: originalScaleX,
+          scaleY: originalScaleY,
+          angle: originalAngle,
+          originX: originalOriginX,
+          originY: originalOriginY,
+          opacity: originalOpacity,
+          id: originalId
+        })
+
+        restoredImg._originalElement = origElementRef
+        restoredImg._originalWidth = origWidthRef
+        restoredImg._originalHeight = origHeightRef
+
+        canvas.remove(obj)
+        canvas.add(restoredImg)
+        resolve()
+      }, { crossOrigin: 'anonymous' })
+    })
+    return
+  }
+
+  if (hasActiveFilters) {
+    applyFilterProcessors(processCtx, width, height, activeFilters)
+  }
+
+  if (hasColorAdjustment) {
+    const imageData = processCtx.getImageData(0, 0, width, height)
+    processColorAdjustment(imageData, adjustment)
+    processCtx.putImageData(imageData, 0, 0)
+  }
+
+  const newDataUrl = processCanvas.toDataURL('image/png')
+  const originalLeft = obj.left
+  const originalTop = obj.top
+  const originalScaleX = obj.scaleX
+  const originalScaleY = obj.scaleY
+  const originalAngle = obj.angle
+  const originalOriginX = obj.originX || 'center'
+  const originalOriginY = obj.originY || 'center'
+  const originalOpacity = obj.opacity
+  const originalId = obj.id
+  const origElementRef = obj._originalElement
+  const origWidthRef = obj._originalWidth || width
+  const origHeightRef = obj._originalHeight || height
+
+  await new Promise<void>((resolve) => {
+    fabric.Image.fromURL(newDataUrl, (newImg: any) => {
+      newImg.set({
+        left: originalLeft,
+        top: originalTop,
+        scaleX: originalScaleX,
+        scaleY: originalScaleY,
+        angle: originalAngle,
+        originX: originalOriginX,
+        originY: originalOriginY,
+        opacity: originalOpacity,
+        id: originalId
+      })
+
+      newImg._originalElement = origElementRef
+      newImg._originalWidth = origWidthRef
+      newImg._originalHeight = origHeightRef
+
+      canvas.remove(obj)
+      canvas.add(newImg)
+      resolve()
+    }, { crossOrigin: 'anonymous' })
+  })
+}
+
+let _isApplyingColor = false
+let _pendingColorArgs: any[] | null = null
+
+async function _runApplyColorWithLock(args: any[]): Promise<void> {
+  const [fabric, canvas, adjustment, filters, isGlobal, onObjectReplaced] = args
+  try {
+    await _applyColorAdjustmentImpl(fabric, canvas, adjustment, filters, isGlobal, onObjectReplaced)
+  } finally {
+    _isApplyingColor = false
+    if (_pendingColorArgs) {
+      const nextArgs = _pendingColorArgs
+      _pendingColorArgs = null
+      _isApplyingColor = true
+      _runApplyColorWithLock(nextArgs)
+    }
+  }
+}
+
+export async function applyColorAdjustment(
+  fabric: any,
+  canvas: any,
+  adjustment: ColorAdjustment,
+  filters: FilterConfig[],
+  isGlobal: boolean = false,
+  onObjectReplaced?: (newId: string) => void
+): Promise<void> {
+  if (_isApplyingColor) {
+    console.log('[ColorAdjustment] SKIP: apply in progress, queuing latest call')
+    _pendingColorArgs = [fabric, canvas, adjustment, filters, isGlobal, onObjectReplaced]
+    return
+  }
+  _isApplyingColor = true
+  await _runApplyColorWithLock([fabric, canvas, adjustment, filters, isGlobal, onObjectReplaced])
+}
+
+async function _applyColorAdjustmentImpl(
+  fabric: any,
+  canvas: any,
+  adjustment: ColorAdjustment,
+  filters: FilterConfig[],
+  isGlobal: boolean,
+  onObjectReplaced?: (newId: string) => void
+): Promise<void> {
+  console.log('[ColorAdjustment] applyColorAdjustment CALLED, isGlobal:', isGlobal)
+  if (!canvas || !fabric) return
+
+  const activeFilters = filters.filter(f => f.enabled)
+
+  if (isGlobal) {
+    const objects = canvas.getObjects()
+    for (const obj of objects) {
+      if (obj.type === 'image' || obj instanceof fabric.Image) {
+        await applyColorAdjustmentToImage(fabric, canvas, obj, adjustment, activeFilters)
+      }
+    }
+    canvas.renderAll()
+    return
+  }
+
+  const activeObject = canvas.getActiveObject()
+  if (!activeObject) {
+    console.log('[ColorAdjustment] EXIT: no active object')
+    return
+  }
+  console.log('[ColorAdjustment] Active object:', activeObject.type, activeObject.id)
+
+  const originalType = activeObject.type
+  const originalId = activeObject.id
+  const imageObj = await ensureImageObject(fabric, canvas, activeObject)
+  if (!imageObj) {
+    console.log('[ColorAdjustment] EXIT: ensureImageObject returned null')
+    return
+  }
+
+  const wasConverted = (originalType === 'group' || originalType instanceof fabric.Group) && 
+                       (imageObj.type === 'image' || imageObj instanceof fabric.Image)
+
+  if ((imageObj.id !== originalId || wasConverted) && onObjectReplaced) {
+    console.log('[ColorAdjustment] Object converted, calling onObjectReplaced:', imageObj.id)
+    onObjectReplaced(imageObj.id)
+  }
+
+  await applyColorAdjustmentToImage(fabric, canvas, imageObj, adjustment, activeFilters)
+  
+  const afterObj = canvas.getActiveObject()
+  if (afterObj) {
+    canvas.setActiveObject(afterObj)
+  }
+  canvas.renderAll()
+  console.log('[ColorAdjustment] applyColorAdjustment COMPLETE')
 }

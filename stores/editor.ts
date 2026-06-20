@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { CanvasObjectData, SpecimenLabel, FilterConfig, ExportSettings, DesignProject, BackgroundRemovalState } from '~/types'
+import type { CanvasObjectData, SpecimenLabel, FilterConfig, ExportSettings, DesignProject, BackgroundRemovalState, ColorAdjustment, ObjectColorState } from '~/types'
 import { useProjectStore } from './project'
 
 export const useEditorStore = defineStore('editor', {
@@ -30,7 +30,15 @@ export const useEditorStore = defineStore('editor', {
       originalImageData: null,
       processedImageData: null,
       maskData: null
-    } as BackgroundRemovalState
+    } as BackgroundRemovalState,
+    objectColorStates: [] as ObjectColorState[],
+    globalColorAdjustment: {
+      hue: 0,
+      saturation: 0,
+      brightness: 0,
+      contrast: 0
+    } as ColorAdjustment,
+    globalAppliedPaletteId: null as string | null
   }),
 
   actions: {
@@ -41,6 +49,7 @@ export const useEditorStore = defineStore('editor', {
 
     removeCanvasObject(id: string) {
       this.canvasObjects = this.canvasObjects.filter(o => o.id !== id)
+      this.objectColorStates = this.objectColorStates.filter(s => s.objectId !== id)
       if (this.selectedObjectId === id) {
         this.selectedObjectId = null
       }
@@ -124,6 +133,9 @@ export const useEditorStore = defineStore('editor', {
         processedImageData: null,
         maskData: null
       }
+      this.objectColorStates = []
+      this.globalColorAdjustment = { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
+      this.globalAppliedPaletteId = null
       this.isDirty = false
     },
 
@@ -171,6 +183,76 @@ export const useEditorStore = defineStore('editor', {
       this.bgRemoval.maskData = null
     },
 
+    getObjectColorState(objectId: string): ObjectColorState {
+      let state = this.objectColorStates.find(s => s.objectId === objectId)
+      if (!state) {
+        state = {
+          objectId,
+          adjustment: { hue: 0, saturation: 0, brightness: 0, contrast: 0 },
+          appliedPaletteId: null
+        }
+        this.objectColorStates.push(state)
+      }
+      return state
+    },
+
+    updateObjectColorAdjustment(objectId: string, adjustment: Partial<ColorAdjustment>) {
+      const state = this.getObjectColorState(objectId)
+      Object.assign(state.adjustment, adjustment)
+      this.isDirty = true
+    },
+
+    setObjectColorPalette(objectId: string, paletteId: string, adjustment: ColorAdjustment) {
+      const state = this.getObjectColorState(objectId)
+      state.adjustment = { ...adjustment }
+      state.appliedPaletteId = paletteId
+      this.isDirty = true
+    },
+
+    resetObjectColor(objectId: string) {
+      const index = this.objectColorStates.findIndex(s => s.objectId === objectId)
+      if (index !== -1) {
+        this.objectColorStates[index] = {
+          objectId,
+          adjustment: { hue: 0, saturation: 0, brightness: 0, contrast: 0 },
+          appliedPaletteId: null
+        }
+      }
+      this.isDirty = true
+    },
+
+    updateGlobalColorAdjustment(adjustment: Partial<ColorAdjustment>) {
+      Object.assign(this.globalColorAdjustment, adjustment)
+      this.isDirty = true
+    },
+
+    setGlobalColorPalette(paletteId: string, adjustment: ColorAdjustment) {
+      this.globalColorAdjustment = { ...adjustment }
+      this.globalAppliedPaletteId = paletteId
+      this.canvasObjects.forEach(obj => {
+        this.setObjectColorPalette(obj.id, paletteId, adjustment)
+      })
+      this.isDirty = true
+    },
+
+    resetGlobalColor() {
+      this.globalColorAdjustment = { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
+      this.globalAppliedPaletteId = null
+      this.objectColorStates = []
+      this.isDirty = true
+    },
+
+    getEffectiveColorAdjustment(objectId: string): ColorAdjustment {
+      const objState = this.objectColorStates.find(s => s.objectId === objectId)
+      const objAdj = objState?.adjustment || { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
+      return {
+        hue: objAdj.hue,
+        saturation: objAdj.saturation,
+        brightness: objAdj.brightness,
+        contrast: objAdj.contrast
+      }
+    },
+
     loadFromProject(project: DesignProject) {
       this.canvasObjects = project.canvasData ? JSON.parse(project.canvasData) : []
       this.labels = [...project.labels]
@@ -183,6 +265,22 @@ export const useEditorStore = defineStore('editor', {
           { id: 'texture', type: 'texture', intensity: 60, enabled: false },
           { id: 'vintage', type: 'vintage', intensity: 35, enabled: false }
         ]
+      }
+      const projectData = project as any
+      if (projectData.objectColorStates) {
+        this.objectColorStates = projectData.objectColorStates
+      } else {
+        this.objectColorStates = []
+      }
+      if (projectData.globalColorAdjustment) {
+        this.globalColorAdjustment = { ...projectData.globalColorAdjustment }
+      } else {
+        this.globalColorAdjustment = { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
+      }
+      if (projectData.globalAppliedPaletteId !== undefined) {
+        this.globalAppliedPaletteId = projectData.globalAppliedPaletteId
+      } else {
+        this.globalAppliedPaletteId = null
       }
       this.selectedObjectId = null
       this.isDirty = false
@@ -197,8 +295,11 @@ export const useEditorStore = defineStore('editor', {
         canvasData: JSON.stringify(this.canvasObjects),
         labels: [...this.labels],
         filters: this.filters.map(f => ({ ...f })),
+        objectColorStates: [...this.objectColorStates],
+        globalColorAdjustment: { ...this.globalColorAdjustment },
+        globalAppliedPaletteId: this.globalAppliedPaletteId,
         updatedAt: new Date().toISOString()
-      })
+      } as any)
       this.isDirty = false
     }
   }

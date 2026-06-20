@@ -103,3 +103,32 @@ export interface BackgroundRemovalState {
   processedImageData: string | null
   maskData: Uint8ClampedArray | null
 }
+
+export interface ColorAdjustment {
+  hue: number
+  saturation: number
+  brightness: number
+  contrast: number
+}
+
+export interface ColorPalette {
+  id: string
+  name: string
+  description: string
+  colors: string[]
+  adjustment: ColorAdjustment
+  previewColors: string[]
+}
+
+export interface ObjectColorState {
+  objectId: string
+  adjustment: ColorAdjustment
+  appliedPaletteId: string | null
+}
+
+export const DEFAULT_COLOR_ADJUSTMENT: ColorAdjustment = {
+  hue: 0,
+  saturation: 0,
+  brightness: 0,
+  contrast: 0
+}

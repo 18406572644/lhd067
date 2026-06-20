@@ -7,6 +7,7 @@ declare global {
   const addRouteMiddleware: typeof import('../../node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']
   const addUserMaterial: typeof import('../../utils/userMaterialDB')['addUserMaterial']
   const applyBrushStroke: typeof import('../../utils/imageProcess')['applyBrushStroke']
+  const applyColorAdjustment: typeof import('../../utils/filterEffects')['applyColorAdjustment']
   const applyDiffuseEffect: typeof import('../../utils/imageProcess')['applyDiffuseEffect']
   const applyFeather: typeof import('../../utils/imageProcess')['applyFeather']
   const applyFiltersToAllImages: typeof import('../../utils/filterEffects')['applyFiltersToAllImages']
@@ -105,6 +106,7 @@ declare global {
   const preloadPayload: typeof import('../../node_modules/nuxt/dist/app/composables/payload')['preloadPayload']
   const preloadRouteComponents: typeof import('../../node_modules/nuxt/dist/app/composables/preload')['preloadRouteComponents']
   const prerenderRoutes: typeof import('../../node_modules/nuxt/dist/app/composables/ssr')['prerenderRoutes']
+  const processColorAdjustment: typeof import('../../utils/filterEffects')['processColorAdjustment']
   const provide: typeof import('../../node_modules/vue')['provide']
   const proxyRefs: typeof import('../../node_modules/vue')['proxyRefs']
   const reactive: typeof import('../../node_modules/vue')['reactive']
@@ -210,6 +212,7 @@ declare module 'vue' {
     readonly addRouteMiddleware: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']>
     readonly addUserMaterial: UnwrapRef<typeof import('../../utils/userMaterialDB')['addUserMaterial']>
     readonly applyBrushStroke: UnwrapRef<typeof import('../../utils/imageProcess')['applyBrushStroke']>
+    readonly applyColorAdjustment: UnwrapRef<typeof import('../../utils/filterEffects')['applyColorAdjustment']>
     readonly applyDiffuseEffect: UnwrapRef<typeof import('../../utils/imageProcess')['applyDiffuseEffect']>
     readonly applyFeather: UnwrapRef<typeof import('../../utils/imageProcess')['applyFeather']>
     readonly applyFiltersToAllImages: UnwrapRef<typeof import('../../utils/filterEffects')['applyFiltersToAllImages']>
@@ -308,6 +311,7 @@ declare module 'vue' {
     readonly preloadPayload: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/payload')['preloadPayload']>
     readonly preloadRouteComponents: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/preload')['preloadRouteComponents']>
     readonly prerenderRoutes: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/ssr')['prerenderRoutes']>
+    readonly processColorAdjustment: UnwrapRef<typeof import('../../utils/filterEffects')['processColorAdjustment']>
     readonly provide: UnwrapRef<typeof import('../../node_modules/vue')['provide']>
     readonly proxyRefs: UnwrapRef<typeof import('../../node_modules/vue')['proxyRefs']>
     readonly reactive: UnwrapRef<typeof import('../../node_modules/vue')['reactive']>

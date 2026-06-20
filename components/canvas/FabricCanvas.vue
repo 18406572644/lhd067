@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { PlantMaterial, CanvasObjectData } from '~/types'
 import { useEditorStore } from '~/stores/editor'
-import { applyFiltersToSelected } from '~/utils/filterEffects'
+import { applyFiltersToSelected, applyColorAdjustment } from '~/utils/filterEffects'
+import type { ColorAdjustment } from '~/types'
 
 const emit = defineEmits<{
   'object-added': [object: any]
@@ -433,6 +434,30 @@ async function loadCanvasFromStore() {
 }
 
 let isApplyingFilters = false
+let colorApplyTimeout: ReturnType<typeof setTimeout> | null = null
+
+async function handleApplyColorAdjustment(adjustment: ColorAdjustment, isGlobal: boolean = false) {
+  if (!canvas || !fabric) return
+
+  if (colorApplyTimeout) {
+    clearTimeout(colorApplyTimeout)
+  }
+
+  colorApplyTimeout = setTimeout(async () => {
+    isSyncingFromStore = true
+    try {
+      await applyColorAdjustment(fabric, canvas, adjustment, editorStore.filters, isGlobal, (newId) => {
+        editorStore.selectObject(newId)
+      })
+    } catch (e) {
+      console.error('[FabricCanvas] Error applying color adjustment:', e)
+    } finally {
+      setTimeout(() => {
+        isSyncingFromStore = false
+      }, 100)
+    }
+  }, 50)
+}
 
 async function applyFilters() {
   console.log('[FabricCanvas V2] applyFilters triggered, filters:', JSON.stringify(editorStore.filters.map((f:any)=>`${f.type}:${f.enabled}`)))
@@ -537,7 +562,8 @@ defineExpose({
   redo,
   updateSelectedObject,
   applyFilters,
-  replaceSelectedImage
+  replaceSelectedImage,
+  applyColorAdjustment: handleApplyColorAdjustment
 })
 
 onMounted(() => {
@@ -551,6 +577,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeyDown)
   if (filterApplyTimeout) {
     clearTimeout(filterApplyTimeout)
+  }
+  if (colorApplyTimeout) {
+    clearTimeout(colorApplyTimeout)
   }
   canvas?.dispose()
 })
