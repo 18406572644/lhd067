@@ -7,7 +7,12 @@ export default defineNuxtConfig({
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
+    '@element-plus/nuxt',
   ],
+  elementPlus: {
+    importStyle: 'css',
+    themes: ['dark'],
+  },
   components: [
     '~/components',
     '~/components/common',
@@ -21,12 +26,7 @@ export default defineNuxtConfig({
     cssPath: '~/assets/styles/tailwind.css',
     configPath: 'tailwind.config.js',
   },
-  css: [
-    'element-plus/dist/index.css',
-    'element-plus/theme-chalk/dark/css-vars.css',
-  ],
   plugins: [
-    '~/plugins/element-plus.client.ts',
     '~/plugins/fabric.client.ts',
   ],
   app: {
@@ -42,16 +42,16 @@ export default defineNuxtConfig({
       link: [
         {
           rel: 'preconnect',
-          href: 'https://fonts.googleapis.com',
+          href: 'https://fonts.font.im',
         },
         {
           rel: 'preconnect',
-          href: 'https://fonts.gstatic.com',
+          href: 'https://fonts.gstatic.font.im',
           crossorigin: '',
         },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap',
+          href: 'https://fonts.font.im/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap',
         },
       ],
     },

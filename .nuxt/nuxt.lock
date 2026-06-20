@@ -1,9 +1,6 @@
 {
-  "pid": 29492,
-  "startedAt": 1781959574402,
+  "pid": 36904,
+  "startedAt": 1781961589080,
   "command": "dev",
-  "cwd": "D:/lhd067",
-  "port": 3001,
-  "hostname": "127.0.0.1",
-  "url": "http://127.0.0.1:3001"
+  "cwd": "D:/lhd067"
 }

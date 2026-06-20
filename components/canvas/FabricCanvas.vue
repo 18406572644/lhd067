@@ -3,6 +3,7 @@ import type { PlantMaterial, CanvasObjectData } from '~/types'
 import { useEditorStore } from '~/stores/editor'
 import { applyFiltersToSelected, applyColorAdjustment } from '~/utils/filterEffects'
 import type { ColorAdjustment } from '~/types'
+import { useFabric } from '~/composables/useFabric'
 
 const emit = defineEmits<{
   'object-added': [object: any]
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>()
 
 const editorStore = useEditorStore()
+const { getFabricNS } = useFabric()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -23,29 +25,23 @@ let fabric: any = null
 let resizeObserver: ResizeObserver | null = null
 let filterApplyTimeout: ReturnType<typeof setTimeout> | null = null
 let isSyncingFromStore = false
+let guideLines: any[] = []
+let hideGuidesTimeout: ReturnType<typeof setTimeout> | null = null
 
-async function waitForFabric(maxAttempts = 100, intervalMs = 50): Promise<any> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const w = window as any
-    if (w.fabric && typeof w.fabric.Canvas === 'function') {
-      console.log('[FabricCanvas] Found fabric on window, version:', w.fabric.version)
-      return w.fabric
-    }
-    await new Promise(resolve => setTimeout(resolve, intervalMs))
-  }
-  return null
-}
+const ALIGN_THRESHOLD = 5
+const GUIDE_COLOR = '#22c55e'
 
 async function initCanvas() {
   if (!import.meta.client || !canvasRef.value || !containerRef.value) return
 
   try {
-    fabric = await waitForFabric()
+    fabric = await getFabricNS()
     if (!fabric) {
       initError.value = 'Fabric.js 加载失败，请刷新页面'
       isInitializing.value = false
       return
     }
+    console.log('[FabricCanvas] Fabric loaded, version:', fabric.version)
 
     canvas = new fabric.Canvas(canvasRef.value, {
       backgroundColor: '#FAFAF5',
@@ -124,6 +120,22 @@ async function initCanvas() {
       emit('object-removed', obj)
     })
 
+    canvas.on('object:moving', (e: any) => {
+      handleObjectMoving(e)
+    })
+
+    canvas.on('object:modified', () => {
+      scheduleHideGuides()
+    })
+
+    canvas.on('mouse:up', () => {
+      scheduleHideGuides()
+    })
+
+    canvas.on('selection:cleared', () => {
+      scheduleHideGuides()
+    })
+
     resizeObserver = new ResizeObserver(() => {
       if (!canvas || !containerRef.value) return
       canvas.setDimensions({
@@ -153,6 +165,227 @@ function handleKeyDown(e: KeyboardEvent) {
     }
     removeSelected()
   }
+}
+
+function getObjectBounds(obj: any) {
+  obj.setCoords()
+  const tl = obj.aCoords.tl
+  const tr = obj.aCoords.tr
+  const br = obj.aCoords.br
+  const bl = obj.aCoords.bl
+  return {
+    left: tl.x,
+    right: br.x,
+    top: tl.y,
+    bottom: br.y,
+    centerX: (tl.x + br.x) / 2,
+    centerY: (tl.y + br.y) / 2
+  }
+}
+
+function clearGuideLines() {
+  guideLines.forEach((line: any) => {
+    if (canvas.contains(line)) {
+      canvas.remove(line)
+    }
+  })
+  guideLines = []
+}
+
+function drawGuideLine(type: 'vertical' | 'horizontal', position: number, bounds: any) {
+  if (!fabric || !canvas) return
+  const zoom = canvas.getZoom()
+  const offset = 40 / zoom
+  let line: any
+  if (type === 'vertical') {
+    line = new fabric.Line(
+      [position, bounds.top - offset, position, bounds.bottom + offset],
+      {
+        stroke: GUIDE_COLOR,
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        fill: GUIDE_COLOR
+      }
+    )
+  } else {
+    line = new fabric.Line(
+      [bounds.left - offset, position, bounds.right + offset, position],
+      {
+        stroke: GUIDE_COLOR,
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        fill: GUIDE_COLOR
+      }
+    )
+  }
+  canvas.add(line)
+  guideLines.push(line)
+}
+
+function scheduleHideGuides() {
+  if (hideGuidesTimeout) {
+    clearTimeout(hideGuidesTimeout)
+  }
+  hideGuidesTimeout = setTimeout(() => {
+    clearGuideLines()
+    canvas?.renderAll()
+  }, 200)
+}
+
+function handleObjectMoving(e: any) {
+  if (!canvas || !fabric || !e.target) return
+  if (isSyncingFromStore) return
+
+  if (hideGuidesTimeout) {
+    clearTimeout(hideGuidesTimeout)
+    hideGuidesTimeout = null
+  }
+
+  const activeObj = e.target
+  const activeBounds = getObjectBounds(activeObj)
+
+  const allObjects = canvas.getObjects().filter((o: any) =>
+    o !== activeObj &&
+    !guideLines.includes(o) &&
+    o.visible !== false &&
+    o.selectable !== false
+  )
+
+  const snapEnabled = editorStore.snapAlignmentEnabled
+
+  const canvasWidth = canvas.getWidth()
+  const canvasHeight = canvas.getHeight()
+  const canvasCenterX = canvasWidth / 2
+  const canvasCenterY = canvasHeight / 2
+
+  const alignmentMatches: Array<{
+    type: 'vertical' | 'horizontal'
+    position: number
+    offset: number
+    axis: 'left' | 'centerX' | 'right' | 'top' | 'centerY' | 'bottom'
+  }> = []
+
+  allObjects.forEach((otherObj: any) => {
+    const otherBounds = getObjectBounds(otherObj)
+    const axes = [
+      { active: 'left', other: 'left', type: 'vertical' },
+      { active: 'left', other: 'centerX', type: 'vertical' },
+      { active: 'left', other: 'right', type: 'vertical' },
+      { active: 'centerX', other: 'left', type: 'vertical' },
+      { active: 'centerX', other: 'centerX', type: 'vertical' },
+      { active: 'centerX', other: 'right', type: 'vertical' },
+      { active: 'right', other: 'left', type: 'vertical' },
+      { active: 'right', other: 'centerX', type: 'vertical' },
+      { active: 'right', other: 'right', type: 'vertical' },
+      { active: 'top', other: 'top', type: 'horizontal' },
+      { active: 'top', other: 'centerY', type: 'horizontal' },
+      { active: 'top', other: 'bottom', type: 'horizontal' },
+      { active: 'centerY', other: 'top', type: 'horizontal' },
+      { active: 'centerY', other: 'centerY', type: 'horizontal' },
+      { active: 'centerY', other: 'bottom', type: 'horizontal' },
+      { active: 'bottom', other: 'top', type: 'horizontal' },
+      { active: 'bottom', other: 'centerY', type: 'horizontal' },
+      { active: 'bottom', other: 'bottom', type: 'horizontal' }
+    ] as const
+
+    axes.forEach(({ active, other, type }) => {
+      const activeVal = activeBounds[active]
+      const otherVal = otherBounds[other]
+      const diff = otherVal - activeVal
+      if (Math.abs(diff) < ALIGN_THRESHOLD) {
+        alignmentMatches.push({
+          type,
+          position: otherVal,
+          offset: diff,
+          axis: active
+        })
+      }
+    })
+  })
+
+  const canvasAxes: Array<{
+    active: 'left' | 'centerX' | 'right' | 'top' | 'centerY' | 'bottom'
+    other: number
+    type: 'vertical' | 'horizontal'
+  }> = [
+    { active: 'left', other: 0, type: 'vertical' },
+    { active: 'centerX', other: canvasCenterX, type: 'vertical' },
+    { active: 'right', other: canvasWidth, type: 'vertical' },
+    { active: 'top', other: 0, type: 'horizontal' },
+    { active: 'centerY', other: canvasCenterY, type: 'horizontal' },
+    { active: 'bottom', other: canvasHeight, type: 'horizontal' }
+  ]
+
+  canvasAxes.forEach(({ active, other, type }) => {
+    const activeVal = activeBounds[active]
+    const diff = other - activeVal
+    if (Math.abs(diff) < ALIGN_THRESHOLD) {
+      alignmentMatches.push({
+        type,
+        position: other,
+        offset: diff,
+        axis: active
+      })
+    }
+  })
+
+  clearGuideLines()
+
+  if (alignmentMatches.length === 0) {
+    canvas.renderAll()
+    return
+  }
+
+  const usedPositions: { vertical: Set<number>; horizontal: Set<number> } = {
+    vertical: new Set(),
+    horizontal: new Set()
+  }
+
+  const axisSnaps: Record<string, number> = {}
+
+  alignmentMatches
+    .sort((a, b) => Math.abs(a.offset) - Math.abs(b.offset))
+    .forEach(match => {
+      if (snapEnabled) {
+        if (!axisSnaps[match.axis]) {
+          axisSnaps[match.axis] = match.offset
+        }
+      }
+      const posKey = Math.round(match.position)
+      if (!usedPositions[match.type].has(posKey)) {
+        usedPositions[match.type].add(posKey)
+        drawGuideLine(match.type, match.position, activeBounds)
+      }
+    })
+
+  if (snapEnabled) {
+    let offsetX = 0
+    let offsetY = 0
+
+    if (axisSnaps.left) offsetX += axisSnaps.left
+    else if (axisSnaps.centerX) offsetX += axisSnaps.centerX
+    else if (axisSnaps.right) offsetX += axisSnaps.right
+
+    if (axisSnaps.top) offsetY += axisSnaps.top
+    else if (axisSnaps.centerY) offsetY += axisSnaps.centerY
+    else if (axisSnaps.bottom) offsetY += axisSnaps.bottom
+
+    if (offsetX !== 0 || offsetY !== 0) {
+      activeObj.set({
+        left: activeObj.left + offsetX,
+        top: activeObj.top + offsetY
+      })
+      activeObj.setCoords()
+    }
+  }
+
+  canvas.renderAll()
 }
 
 function animateEntrance(obj: any) {
@@ -723,6 +956,9 @@ onBeforeUnmount(() => {
   }
   if (colorApplyTimeout) {
     clearTimeout(colorApplyTimeout)
+  }
+  if (hideGuidesTimeout) {
+    clearTimeout(hideGuidesTimeout)
   }
   canvas?.dispose()
 })

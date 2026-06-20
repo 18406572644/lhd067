@@ -39,7 +39,8 @@ export const useEditorStore = defineStore('editor', {
       brightness: 0,
       contrast: 0
     } as ColorAdjustment,
-    globalAppliedPaletteId: null as string | null
+    globalAppliedPaletteId: null as string | null,
+    snapAlignmentEnabled: true
   }),
 
   actions: {
@@ -95,6 +96,10 @@ export const useEditorStore = defineStore('editor', {
       }
     },
 
+    toggleSnapAlignment() {
+      this.snapAlignmentEnabled = !this.snapAlignmentEnabled
+    },
+
     updateFilterIntensity(id: string, intensity: number) {
       const filter = this.filters.find(f => f.id === id)
       if (filter) {
@@ -138,6 +143,7 @@ export const useEditorStore = defineStore('editor', {
       this.objectColorStates = []
       this.globalColorAdjustment = { hue: 0, saturation: 0, brightness: 0, contrast: 0 }
       this.globalAppliedPaletteId = null
+      this.snapAlignmentEnabled = true
       this.isDirty = false
     },
 

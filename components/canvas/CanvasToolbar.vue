@@ -12,7 +12,8 @@ import {
   ZoomIn,
   Maximize,
   Save,
-  Download
+  Download,
+  Magnet
 } from 'lucide-vue-next'
 
 const emit = defineEmits<{
@@ -34,6 +35,11 @@ const projectStore = useProjectStore()
 const router = useRouter()
 
 const hasSelection = computed(() => !!editorStore.selectedObjectId)
+const snapEnabled = computed(() => editorStore.snapAlignmentEnabled)
+
+function handleToggleSnap() {
+  editorStore.toggleSnapAlignment()
+}
 
 function handleSave() {
   emit('save')
@@ -134,6 +140,18 @@ function handleExport() {
         @click="emit('fit-screen')"
       >
         <Maximize :size="18" />
+      </button>
+    </el-tooltip>
+
+    <div class="w-px h-6 bg-herb-brown-light/30 mx-1" />
+
+    <el-tooltip :content="snapEnabled ? '关闭磁吸对齐' : '开启磁吸对齐'" placement="bottom">
+      <button
+        class="rounded-lg p-2 transition-all"
+        :class="snapEnabled ? 'bg-herb-green/30 text-herb-brown' : 'hover:bg-herb-green/20 text-herb-brown/50'"
+        @click="handleToggleSnap"
+      >
+        <Magnet :size="18" />
       </button>
     </el-tooltip>
 
