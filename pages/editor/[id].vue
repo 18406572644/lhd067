@@ -97,42 +97,20 @@ function handleUpdateScale(val: number) {
 }
 
 async function handleBgRemovalApply(dataUrl: string) {
-  if (!selectedObject.value || selectedObject.value.type !== 'uploaded') return
+  const obj = selectedObject.value
+  if (!obj || obj.type !== 'uploaded') return
 
   try {
-    if (fabricCanvasRef.value?.canvas) {
-      const canvas = fabricCanvasRef.value.canvas
-      const activeObj = canvas.getActiveObject()
-      if (activeObj && activeObj.id === selectedObject.value.id) {
-        const fabric = (window as any).fabric
-        if (fabric) {
-          const newImg = await new Promise<any>((resolve) => {
-            fabric.Image.fromURL(dataUrl, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
-          })
-          if (newImg) {
-            newImg.set({
-              left: activeObj.left,
-              top: activeObj.top,
-              scaleX: activeObj.scaleX,
-              scaleY: activeObj.scaleY,
-              angle: activeObj.angle,
-              opacity: activeObj.opacity,
-              originX: 'center',
-              originY: 'center',
-              id: activeObj.id
-            })
-            canvas.remove(activeObj)
-            canvas.add(newImg)
-            canvas.setActiveObject(newImg)
-            canvas.renderAll()
-
-            editorStore.updateCanvasObject(activeObj.id, {
-              imageData: dataUrl
-            })
-            ElMessage.success('抠图效果已应用')
-          }
-        }
-      }
+    const result = await fabricCanvasRef.value?.replaceSelectedImage(dataUrl)
+    if (result) {
+      editorStore.updateCanvasObject(obj.id, {
+        imageData: dataUrl,
+        scaleX: result.scaleX,
+        scaleY: result.scaleY
+      })
+      ElMessage.success('抠图效果已应用')
+    } else {
+      ElMessage.error('应用抠图效果失败')
     }
   } catch (e) {
     console.error('应用抠图效果失败:', e)
@@ -245,6 +223,7 @@ watch(project, (newProject) => {
           <FilterPanel v-show="activeTab === 'filters'" />
           <BackgroundRemovalPanel
             v-show="activeTab === 'bgremoval'"
+            :visible="activeTab === 'bgremoval'"
             @apply="handleBgRemovalApply"
           />
         </div>

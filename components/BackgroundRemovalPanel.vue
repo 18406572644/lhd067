@@ -10,6 +10,10 @@ import {
 } from '~/utils/imageProcess'
 import { Eraser, Hand, RotateCcw, Eye, EyeOff } from 'lucide-vue-next'
 
+const props = defineProps<{
+  visible?: boolean
+}>()
+
 const emit = defineEmits<{
   'apply': [dataUrl: string]
   'cancel': []
@@ -24,6 +28,7 @@ const lastDrawPoint = ref<{ x: number; y: number } | null>(null)
 const originalCanvas = ref<HTMLCanvasElement | null>(null)
 const workingCanvas = ref<HTMLCanvasElement | null>(null)
 const currentMask = ref<Uint8ClampedArray | null>(null)
+const currentObjectId = ref<string | null>(null)
 
 const bgRemoval = computed(() => editorStore.bgRemoval)
 const selectedObject = computed(() => {
@@ -41,12 +46,18 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 async function initFromSelected() {
   if (!selectedObject.value?.imageData) return
 
+  if (currentObjectId.value === selectedObject.value.id && originalCanvas.value) {
+    await renderPreview()
+    return
+  }
+
   isProcessing.value = true
   try {
     const canvas = await dataUrlToCanvas(selectedObject.value.imageData)
     originalCanvas.value = canvas
     workingCanvas.value = canvas
     currentMask.value = createInitialMask(canvas.width, canvas.height)
+    currentObjectId.value = selectedObject.value.id
 
     editorStore.setBgRemovalOriginalImage(selectedObject.value.imageData)
     editorStore.setBgRemovalProcessedImage(selectedObject.value.imageData)
@@ -298,6 +309,20 @@ watch(
 )
 
 watch(
+  () => props.visible,
+  async (isVisible) => {
+    if (isVisible) {
+      await nextTick()
+      if (hasImage.value && selectedObject.value?.id !== currentObjectId.value) {
+        await initFromSelected()
+      } else if (workingCanvas.value) {
+        await renderPreview()
+      }
+    }
+  }
+)
+
+watch(
   () => editorStore.selectedObjectId,
   async () => {
     if (hasImage.value) {
@@ -308,7 +333,7 @@ watch(
 )
 
 onMounted(async () => {
-  if (hasImage.value) {
+  if (hasImage.value && props.visible) {
     await initFromSelected()
   }
 })

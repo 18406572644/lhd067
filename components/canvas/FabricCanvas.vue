@@ -415,6 +415,62 @@ async function applyFilters() {
   }, 50)
 }
 
+async function replaceSelectedImage(dataUrl: string): Promise<{ scaleX: number; scaleY: number } | null> {
+  if (!canvas || !fabric) return null
+
+  const activeObj = canvas.getActiveObject()
+  if (!activeObj || !activeObj.id) return null
+
+  isSyncingFromStore = true
+  try {
+    const newImg = await new Promise<any>((resolve) => {
+      fabric.Image.fromURL(dataUrl, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
+    })
+    if (!newImg) return null
+
+    const visualWidth = activeObj.width * activeObj.scaleX
+    const visualHeight = activeObj.height * activeObj.scaleY
+    const newScaleX = visualWidth / newImg.width
+    const newScaleY = visualHeight / newImg.height
+
+    const objId = activeObj.id
+    const objLeft = activeObj.left
+    const objTop = activeObj.top
+    const objAngle = activeObj.angle
+    const objOpacity = activeObj.opacity
+    const objOriginX = activeObj.originX
+    const objOriginY = activeObj.originY
+
+    canvas.remove(activeObj)
+    canvas.add(newImg)
+
+    newImg.set({
+      left: objLeft,
+      top: objTop,
+      scaleX: newScaleX,
+      scaleY: newScaleY,
+      angle: objAngle,
+      opacity: objOpacity,
+      originX: objOriginX,
+      originY: objOriginY,
+      id: objId
+    })
+
+    newImg.setCoords()
+    canvas.setActiveObject(newImg)
+    canvas.renderAll()
+
+    return { scaleX: newScaleX, scaleY: newScaleY }
+  } catch (e) {
+    console.error('[FabricCanvas] replaceSelectedImage error:', e)
+    return null
+  } finally {
+    setTimeout(() => {
+      isSyncingFromStore = false
+    }, 100)
+  }
+}
+
 defineExpose({
   get canvas() { return canvas },
   addMaterial,
@@ -428,7 +484,8 @@ defineExpose({
   undo,
   redo,
   updateSelectedObject,
-  applyFilters
+  applyFilters,
+  replaceSelectedImage
 })
 
 onMounted(() => {
