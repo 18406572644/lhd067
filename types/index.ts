@@ -63,3 +63,18 @@ export interface ExportSettings {
   showBorder: boolean
   borderStyle: 'none' | 'simple' | 'botanical'
 }
+
+export type RemovalMode = 'auto' | 'manual'
+export type BrushMode = 'keep' | 'remove'
+
+export interface BackgroundRemovalState {
+  mode: RemovalMode
+  tolerance: number
+  feather: number
+  brushMode: BrushMode
+  brushSize: number
+  isComparing: boolean
+  originalImageData: string | null
+  processedImageData: string | null
+  maskData: Uint8ClampedArray | null
+}

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { CanvasObjectData, SpecimenLabel, FilterConfig, ExportSettings, DesignProject } from '~/types'
+import type { CanvasObjectData, SpecimenLabel, FilterConfig, ExportSettings, DesignProject, BackgroundRemovalState } from '~/types'
 import { useProjectStore } from './project'
 
 export const useEditorStore = defineStore('editor', {
@@ -19,7 +19,18 @@ export const useEditorStore = defineStore('editor', {
       showBorder: true,
       borderStyle: 'simple' as const
     } as ExportSettings,
-    isDirty: false
+    isDirty: false,
+    bgRemoval: {
+      mode: 'auto',
+      tolerance: 30,
+      feather: 0,
+      brushMode: 'remove',
+      brushSize: 20,
+      isComparing: false,
+      originalImageData: null,
+      processedImageData: null,
+      maskData: null
+    } as BackgroundRemovalState
   }),
 
   actions: {
@@ -102,7 +113,62 @@ export const useEditorStore = defineStore('editor', {
         showBorder: true,
         borderStyle: 'simple'
       }
+      this.bgRemoval = {
+        mode: 'auto',
+        tolerance: 30,
+        feather: 0,
+        brushMode: 'remove',
+        brushSize: 20,
+        isComparing: false,
+        originalImageData: null,
+        processedImageData: null,
+        maskData: null
+      }
       this.isDirty = false
+    },
+
+    setBgRemovalMode(mode: 'auto' | 'manual') {
+      this.bgRemoval.mode = mode
+    },
+
+    setBgRemovalTolerance(tolerance: number) {
+      this.bgRemoval.tolerance = tolerance
+    },
+
+    setBgRemovalFeather(feather: number) {
+      this.bgRemoval.feather = feather
+    },
+
+    setBgRemovalBrushMode(brushMode: 'keep' | 'remove') {
+      this.bgRemoval.brushMode = brushMode
+    },
+
+    setBgRemovalBrushSize(brushSize: number) {
+      this.bgRemoval.brushSize = brushSize
+    },
+
+    setBgRemovalComparing(isComparing: boolean) {
+      this.bgRemoval.isComparing = isComparing
+    },
+
+    setBgRemovalOriginalImage(dataUrl: string | null) {
+      this.bgRemoval.originalImageData = dataUrl
+    },
+
+    setBgRemovalProcessedImage(dataUrl: string | null) {
+      this.bgRemoval.processedImageData = dataUrl
+    },
+
+    setBgRemovalMask(mask: Uint8ClampedArray | null) {
+      this.bgRemoval.maskData = mask
+    },
+
+    resetBgRemoval() {
+      this.bgRemoval.tolerance = 30
+      this.bgRemoval.feather = 0
+      this.bgRemoval.isComparing = false
+      this.bgRemoval.processedImageData = this.bgRemoval.originalImageData
+      this.bgRemoval.maskData = null
     },
 
     loadFromProject(project: DesignProject) {

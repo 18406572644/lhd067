@@ -312,3 +312,316 @@ export function imageFileToCanvas(file: File): Promise<HTMLCanvasElement> {
     img.src = url
   })
 }
+
+interface Pixel {
+  r: number
+  g: number
+  b: number
+  a: number
+  idx: number
+}
+
+function kmeans(pixels: Pixel[], k: number, maxIterations: number = 10): { centroids: number[][]; assignments: number[] } {
+  const sampleSize = Math.min(pixels.length, 1000)
+  const centroids: number[][] = []
+  for (let i = 0; i < k; i++) {
+    const randIdx = Math.floor(Math.random() * sampleSize)
+    const p = pixels[randIdx]
+    centroids.push([p.r, p.g, p.b])
+  }
+
+  let assignments = new Array(pixels.length).fill(0)
+  let hasChanged = true
+  let iter = 0
+
+  while (hasChanged && iter < maxIterations) {
+    hasChanged = false
+    iter++
+
+    for (let i = 0; i < pixels.length; i++) {
+      const p = pixels[i]
+      let minDist = Infinity
+      let minCluster = 0
+      for (let j = 0; j < k; j++) {
+        const c = centroids[j]
+        const dr = p.r - c[0]
+        const dg = p.g - c[1]
+        const db = p.b - c[2]
+        const dist = dr * dr + dg * dg + db * db
+        if (dist < minDist) {
+          minDist = dist
+          minCluster = j
+        }
+      }
+      if (assignments[i] !== minCluster) {
+        assignments[i] = minCluster
+        hasChanged = true
+      }
+    }
+
+    const sums = new Array(k).fill(0).map(() => [0, 0, 0, 0])
+    for (let i = 0; i < pixels.length; i++) {
+      const p = pixels[i]
+      const a = assignments[i]
+      sums[a][0] += p.r
+      sums[a][1] += p.g
+      sums[a][2] += p.b
+      sums[a][3]++
+    }
+    for (let j = 0; j < k; j++) {
+      if (sums[j][3] > 0) {
+        centroids[j] = [
+          sums[j][0] / sums[j][3],
+          sums[j][1] / sums[j][3],
+          sums[j][2] / sums[j][3]
+        ]
+      }
+    }
+  }
+
+  return { centroids, assignments }
+}
+
+export function removeBackgroundKmeans(
+  canvas: HTMLCanvasElement,
+  tolerance: number = 30
+): { canvas: HTMLCanvasElement; mask: Uint8ClampedArray } {
+  const ctx = canvas.getContext('2d')!
+  const width = canvas.width
+  const height = canvas.height
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  const pixels: Pixel[] = []
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] > 0) {
+      pixels.push({
+        r: data[i],
+        g: data[i + 1],
+        b: data[i + 2],
+        a: data[i + 3],
+        idx: i
+      })
+    }
+  }
+
+  if (pixels.length === 0) {
+    return { canvas, mask: new Uint8ClampedArray(width * height).fill(255) }
+  }
+
+  const k = Math.min(4, Math.max(2, Math.floor(pixels.length / 5000)))
+  const { centroids, assignments } = kmeans(pixels, k)
+
+  const edgePixels = new Set<number>()
+  for (let x = 0; x < width; x++) {
+    for (const y of [0, height - 1]) {
+      edgePixels.add(y * width + x)
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    for (const x of [0, width - 1]) {
+      edgePixels.add(y * width + x)
+    }
+  }
+
+  const clusterEdgeCounts = new Array(k).fill(0)
+  const clusterTotalCounts = new Array(k).fill(0)
+  for (let i = 0; i < pixels.length; i++) {
+    const p = pixels[i]
+    const pixelIdx = Math.floor(p.idx / 4)
+    const a = assignments[i]
+    clusterTotalCounts[a]++
+    if (edgePixels.has(pixelIdx)) {
+      clusterEdgeCounts[a]++
+    }
+  }
+
+  let bgCluster = 0
+  let maxEdgeRatio = 0
+  for (let j = 0; j < k; j++) {
+    const ratio = clusterEdgeCounts[j] / Math.max(1, clusterTotalCounts[j])
+    const brightness = (centroids[j][0] + centroids[j][1] + centroids[j][2]) / 3
+    const score = ratio * 0.6 + (brightness / 255) * 0.4
+    if (score > maxEdgeRatio) {
+      maxEdgeRatio = score
+      bgCluster = j
+    }
+  }
+
+  const result = new ImageData(new Uint8ClampedArray(data), width, height)
+  const out = result.data
+  const mask = new Uint8ClampedArray(width * height)
+
+  const tolSq = (tolerance / 100) * 18000
+  const bgCentroid = centroids[bgCluster]
+
+  for (let i = 0; i < pixels.length; i++) {
+    const p = pixels[i]
+    const a = assignments[i]
+    const pixelIdx = Math.floor(p.idx / 4)
+
+    if (a === bgCluster) {
+      out[p.idx + 3] = 0
+      mask[pixelIdx] = 0
+    } else {
+      const dr = p.r - bgCentroid[0]
+      const dg = p.g - bgCentroid[1]
+      const db = p.b - bgCentroid[2]
+      const distSq = dr * dr + dg * dg + db * db
+
+      if (distSq < tolSq) {
+        const alpha = Math.round((distSq / tolSq) * 255)
+        out[p.idx + 3] = alpha
+        mask[pixelIdx] = alpha
+      } else {
+        mask[pixelIdx] = 255
+      }
+    }
+  }
+
+  const newCanvas = document.createElement('canvas')
+  newCanvas.width = width
+  newCanvas.height = height
+  const newCtx = newCanvas.getContext('2d')!
+  newCtx.putImageData(result, 0, 0)
+
+  return { canvas: newCanvas, mask }
+}
+
+export function applyFeather(
+  canvas: HTMLCanvasElement,
+  mask: Uint8ClampedArray,
+  feather: number
+): HTMLCanvasElement {
+  if (feather <= 0) return canvas
+
+  const width = canvas.width
+  const height = canvas.height
+  const ctx = canvas.getContext('2d')!
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  const featheredMask = new Uint8ClampedArray(mask.length)
+  const radius = feather
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      let sum = 0
+      let count = 0
+
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist > radius) continue
+          const nx = x + dx
+          const ny = y + dy
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            const weight = 1 - dist / radius
+            sum += mask[ny * width + nx] * weight
+            count += weight
+          }
+        }
+      }
+
+      featheredMask[idx] = count > 0 ? Math.round(sum / count) : 0
+    }
+  }
+
+  const result = new ImageData(new Uint8ClampedArray(data), width, height)
+  const out = result.data
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const pixelIdx = y * width + x
+      const dataIdx = pixelIdx * 4
+      const maskVal = featheredMask[pixelIdx]
+      const originalAlpha = data[dataIdx + 3]
+      out[dataIdx + 3] = Math.round(originalAlpha * (maskVal / 255))
+    }
+  }
+
+  const newCanvas = document.createElement('canvas')
+  newCanvas.width = width
+  newCanvas.height = height
+  const newCtx = newCanvas.getContext('2d')!
+  newCtx.putImageData(result, 0, 0)
+  return newCanvas
+}
+
+export function applyBrushStroke(
+  canvas: HTMLCanvasElement,
+  mask: Uint8ClampedArray,
+  points: { x: number; y: number }[],
+  brushSize: number,
+  brushMode: 'keep' | 'remove'
+): { canvas: HTMLCanvasElement; mask: Uint8ClampedArray } {
+  const width = canvas.width
+  const height = canvas.height
+  const ctx = canvas.getContext('2d')!
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  const newMask = new Uint8ClampedArray(mask)
+
+  for (const point of points) {
+    const px = Math.round(point.x)
+    const py = Math.round(point.y)
+    const r = brushSize
+
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist > r) continue
+        const nx = px + dx
+        const ny = py + dy
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const pixelIdx = ny * width + nx
+          const falloff = 1 - dist / r
+          if (brushMode === 'remove') {
+            newMask[pixelIdx] = Math.max(0, Math.round(newMask[pixelIdx] * (1 - falloff)))
+          } else {
+            newMask[pixelIdx] = Math.min(255, Math.round(newMask[pixelIdx] + (255 - newMask[pixelIdx]) * falloff))
+          }
+        }
+      }
+    }
+  }
+
+  const result = new ImageData(new Uint8ClampedArray(data), width, height)
+  const out = result.data
+
+  for (let i = 0; i < newMask.length; i++) {
+    const dataIdx = i * 4
+    const originalAlpha = data[dataIdx + 3]
+    out[dataIdx + 3] = Math.round(originalAlpha * (newMask[i] / 255))
+  }
+
+  const newCanvas = document.createElement('canvas')
+  newCanvas.width = width
+  newCanvas.height = height
+  const newCtx = newCanvas.getContext('2d')!
+  newCtx.putImageData(result, 0, 0)
+
+  return { canvas: newCanvas, mask: newMask }
+}
+
+export function dataUrlToCanvas(dataUrl: string): Promise<HTMLCanvasElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0)
+      resolve(canvas)
+    }
+    img.onerror = () => reject(new Error('Failed to load image from data URL'))
+    img.src = dataUrl
+  })
+}
+
+export function createInitialMask(width: number, height: number): Uint8ClampedArray {
+  return new Uint8ClampedArray(width * height).fill(255)
+}

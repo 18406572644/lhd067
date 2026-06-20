@@ -6,7 +6,7 @@ import { useMaterialStore } from '~/stores/material'
 import { useEditorStore } from '~/stores/editor'
 import type { PlantMaterial } from '~/types'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Palette, Tag, Sparkles } from 'lucide-vue-next'
+import { ArrowLeft, Palette, Tag, Sparkles, Scissors } from 'lucide-vue-next'
 import { removeBackground, imageFileToCanvas } from '~/utils/imageProcess'
 
 const route = useRoute()
@@ -17,7 +17,7 @@ const editorStore = useEditorStore()
 
 const fabricCanvasRef = ref()
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const activeTab = ref<'materials' | 'labels' | 'filters'>('materials')
+const activeTab = ref<'materials' | 'labels' | 'filters' | 'bgremoval'>('materials')
 
 const project = computed(() => projectStore.getCurrentProject)
 
@@ -93,6 +93,50 @@ function handleUpdateScale(val: number) {
   if (selectedObject.value) {
     editorStore.updateCanvasObject(selectedObject.value.id, { scaleX: val / 100, scaleY: val / 100 })
     fabricCanvasRef.value?.updateSelectedObject({ scaleX: val / 100, scaleY: val / 100 })
+  }
+}
+
+async function handleBgRemovalApply(dataUrl: string) {
+  if (!selectedObject.value || selectedObject.value.type !== 'uploaded') return
+
+  try {
+    if (fabricCanvasRef.value?.canvas) {
+      const canvas = fabricCanvasRef.value.canvas
+      const activeObj = canvas.getActiveObject()
+      if (activeObj && activeObj.id === selectedObject.value.id) {
+        const fabric = (window as any).fabric
+        if (fabric) {
+          const newImg = await new Promise<any>((resolve) => {
+            fabric.Image.fromURL(dataUrl, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
+          })
+          if (newImg) {
+            newImg.set({
+              left: activeObj.left,
+              top: activeObj.top,
+              scaleX: activeObj.scaleX,
+              scaleY: activeObj.scaleY,
+              angle: activeObj.angle,
+              opacity: activeObj.opacity,
+              originX: 'center',
+              originY: 'center',
+              id: activeObj.id
+            })
+            canvas.remove(activeObj)
+            canvas.add(newImg)
+            canvas.setActiveObject(newImg)
+            canvas.renderAll()
+
+            editorStore.updateCanvasObject(activeObj.id, {
+              imageData: dataUrl
+            })
+            ElMessage.success('抠图效果已应用')
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('应用抠图效果失败:', e)
+    ElMessage.error('应用抠图效果失败')
   }
 }
 
@@ -177,6 +221,18 @@ watch(project, (newProject) => {
             <Sparkles :size="16" />
             滤镜
           </button>
+          <button
+            :class="[
+              'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
+              activeTab === 'bgremoval'
+                ? 'bg-herb-green/80 text-herb-brown'
+                : 'text-herb-brown/60 hover:bg-herb-green/30'
+            ]"
+            @click="activeTab = 'bgremoval'"
+          >
+            <Scissors :size="16" />
+            抠图
+          </button>
         </div>
 
         <div class="flex-1 min-h-0 overflow-hidden">
@@ -187,6 +243,10 @@ watch(project, (newProject) => {
           />
           <LabelEditor v-show="activeTab === 'labels'" />
           <FilterPanel v-show="activeTab === 'filters'" />
+          <BackgroundRemovalPanel
+            v-show="activeTab === 'bgremoval'"
+            @apply="handleBgRemovalApply"
+          />
         </div>
       </div>
 
