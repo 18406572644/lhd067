@@ -1,0 +1,162 @@
+import type { PlantMaterial, MaterialCategory } from '~/types'
+
+export const categories: MaterialCategory[] = [
+  { key: 'flower', label: '花卉', icon: 'Flower2' },
+  { key: 'leaf', label: '叶片', icon: 'Leaf' },
+  { key: 'grass', label: '草类', icon: 'Wheat' },
+  { key: 'fruit', label: '果实', icon: 'Cherry' },
+  { key: 'branch', label: '枝条', icon: 'TreePine' },
+  { key: 'fern', label: '蕨类', icon: 'Palmtree' },
+]
+
+function svg(inner: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${inner}</svg>`
+}
+
+function mat(id: string, name: string, category: PlantMaterial['category'], svgInner: string, tags: string[]): PlantMaterial {
+  const svgData = svg(svgInner)
+  return { id, name, category, thumbnail: svgData, svgData, tags }
+}
+
+export const materials: PlantMaterial[] = [
+  mat('mat_001', '樱花', 'flower',
+    '<g fill="#E8C4C4" opacity="0.85"><path d="M50,50 C42,38 36,28 50,20 C64,28 58,38 50,50Z" transform="rotate(0,50,50)"/><path d="M50,50 C42,38 36,28 50,20 C64,28 58,38 50,50Z" transform="rotate(72,50,50)"/><path d="M50,50 C42,38 36,28 50,20 C64,28 58,38 50,50Z" transform="rotate(144,50,50)"/><path d="M50,50 C42,38 36,28 50,20 C64,28 58,38 50,50Z" transform="rotate(216,50,50)"/><path d="M50,50 C42,38 36,28 50,20 C64,28 58,38 50,50Z" transform="rotate(288,50,50)"/><circle cx="50" cy="50" r="5" fill="#D4A0B0"/></g>',
+    ['春季', '蔷薇科', '粉色', '五瓣']
+  ),
+  mat('mat_002', '玫瑰', 'flower',
+    '<g fill="#D4A0B0"><path d="M50,55 C40,40 28,38 35,25 C42,18 55,22 58,32 C60,40 52,50 50,55Z" opacity="0.7"/><path d="M50,55 C60,40 72,38 65,25 C58,18 45,22 42,32 C40,40 48,50 50,55Z" opacity="0.7"/><path d="M50,55 C30,50 22,38 30,28 C38,22 52,28 50,40 C49,46 50,52 50,55Z" opacity="0.6"/><path d="M50,55 C70,50 78,38 70,28 C62,22 48,28 50,40 C51,46 50,52 50,55Z" opacity="0.6"/><path d="M50,52 C44,44 40,36 50,30 C60,36 56,44 50,52Z" fill="#C5908A" opacity="0.9"/></g>',
+    ['蔷薇科', '红色', '重瓣', '芳香']
+  ),
+  mat('mat_003', '郁金香', 'flower',
+    '<g fill="#C5B3D8"><path d="M50,18 C36,18 24,34 28,56 C30,62 42,66 50,58 C58,66 70,62 72,56 C76,34 64,18 50,18Z" opacity="0.8"/><path d="M50,24 C38,24 30,38 32,52 C34,56 44,58 50,52 C56,58 66,56 68,52 C70,38 62,24 50,24Z" fill="#B8A0C8" opacity="0.6"/><path d="M50,58 C48,64 44,74 40,85 L50,78 L60,85 C56,74 52,64 50,58Z" fill="#8B7355" opacity="0.5"/></g>',
+    ['百合科', '球根', '紫色', '杯状']
+  ),
+  mat('mat_004', '薰衣草', 'flower',
+    '<g fill="#B8A0C8"><path d="M50,90 L50,40" stroke="#7B6B8B" stroke-width="2" fill="none"/><ellipse cx="50" cy="38" rx="5" ry="4" opacity="0.9"/><ellipse cx="50" cy="32" rx="5" ry="4" opacity="0.85"/><ellipse cx="50" cy="26" rx="4.5" ry="3.5" opacity="0.8"/><ellipse cx="50" cy="21" rx="4" ry="3" opacity="0.75"/><ellipse cx="50" cy="17" rx="3" ry="2.5" opacity="0.7"/><path d="M50,70 C42,65 36,60 32,55" stroke="#7B6B8B" stroke-width="1.5" fill="none"/><path d="M50,62 C58,57 64,52 68,47" stroke="#7B6B8B" stroke-width="1.5" fill="none"/></g>',
+    ['唇形科', '紫色', '芳香', '穗状']
+  ),
+  mat('mat_005', '牵牛花', 'flower',
+    '<g fill="#E8C4C4"><path d="M50,35 C30,35 18,48 22,58 C26,68 40,72 50,65 C60,72 74,68 78,58 C82,48 70,35 50,35Z" opacity="0.8"/><path d="M50,40 C34,40 24,50 27,57 C30,64 42,66 50,60 C58,66 70,64 73,57 C76,50 66,40 50,40Z" fill="#D4A0B0" opacity="0.5"/><path d="M50,65 C48,72 44,82 38,92 L50,86 L62,92 C56,82 52,72 50,65Z" fill="#7B6B8B" opacity="0.6"/><path d="M40,50 L44,44 M50,48 L50,42 M60,50 L56,44" stroke="#C5908A" stroke-width="1" fill="none" opacity="0.5"/></g>',
+    ['旋花科', '藤本', '粉色', '喇叭状']
+  ),
+  mat('mat_006', '向日葵', 'flower',
+    '<g fill="#D4A0B0"><path d="M50,28 C46,18 44,12 50,8 C56,12 54,18 50,28Z" opacity="0.7"/><path d="M62,32 C68,24 72,18 78,20 C76,26 68,30 62,32Z" opacity="0.7"/><path d="M38,32 C32,24 28,18 22,20 C24,26 32,30 38,32Z" opacity="0.7"/><path d="M68,42 C78,38 84,36 86,42 C80,44 72,43 68,42Z" opacity="0.7"/><path d="M32,42 C22,38 16,36 14,42 C20,44 28,43 32,42Z" opacity="0.7"/><path d="M65,55 C74,60 80,64 78,70 C72,68 67,62 65,55Z" opacity="0.7"/><path d="M35,55 C26,60 20,64 22,70 C28,68 33,62 35,55Z" opacity="0.7"/><path d="M55,64 C58,74 60,80 54,82 C52,76 54,70 55,64Z" opacity="0.7"/><path d="M45,64 C42,74 40,80 46,82 C48,76 46,70 45,64Z" opacity="0.7"/><circle cx="50" cy="47" r="12" fill="#8B7355" opacity="0.9"/></g>',
+    ['菊科', '黄色', '大型', '向光性']
+  ),
+  mat('mat_007', '银杏叶', 'leaf',
+    '<g fill="#A8D5BA"><path d="M50,88 L50,50 C50,50 30,48 24,32 C20,22 28,14 38,18 C44,20 48,28 50,35 C52,28 56,20 62,18 C72,14 80,22 76,32 C70,48 50,50 50,50Z" opacity="0.85"/><path d="M50,88 L50,50" stroke="#7BBF96" stroke-width="1.5" fill="none" opacity="0.6"/></g>',
+    ['银杏科', '扇形', '秋季', '化石植物']
+  ),
+  mat('mat_008', '枫叶', 'leaf',
+    '<g fill="#8BC49E"><path d="M50,85 L50,55 L38,65 L42,48 L22,50 L38,38 L28,22 L44,30 L50,12 L56,30 L72,22 L62,38 L78,50 L58,48 L62,65 L50,55Z" opacity="0.85"/><path d="M50,85 L50,55" stroke="#6BAF88" stroke-width="1.5" fill="none" opacity="0.5"/></g>',
+    ['槭树科', '掌状', '秋季', '红叶']
+  ),
+  mat('mat_009', '荷叶', 'leaf',
+    '<g fill="#7BBF96"><path d="M50,80 C48,78 46,76 45,74 C20,72 10,52 20,34 C28,20 42,14 50,14 C58,14 72,20 80,34 C90,52 80,72 55,74 C54,76 52,78 50,80Z" opacity="0.8"/><path d="M50,80 L50,14" stroke="#6BAF88" stroke-width="1.2" fill="none" opacity="0.4"/></g>',
+    ['莲科', '水生', '圆形', '大型']
+  ),
+  mat('mat_010', '桦树叶', 'leaf',
+    '<g fill="#6BAF88"><path d="M50,15 C42,18 34,30 34,48 C34,64 40,76 50,82 C60,76 66,64 66,48 C66,30 58,18 50,15Z" opacity="0.85"/><path d="M50,15 L50,82" stroke="#5B9F78" stroke-width="1" fill="none" opacity="0.5"/><path d="M50,35 L40,30 M50,50 L38,46 M50,65 L40,62 M50,35 L60,30 M50,50 L62,46 M50,65 L60,62" stroke="#5B9F78" stroke-width="0.6" fill="none" opacity="0.3"/></g>',
+    ['桦木科', '卵形', '锯齿', '小型']
+  ),
+  mat('mat_011', '榕树叶', 'leaf',
+    '<g fill="#A8D5BA"><path d="M50,10 C38,14 22,28 20,48 C18,66 30,82 50,88 C70,82 82,66 80,48 C78,28 62,14 50,10Z" opacity="0.8"/><path d="M50,10 L50,88" stroke="#8BC49E" stroke-width="1.5" fill="none" opacity="0.4"/><path d="M50,30 L32,24 M50,50 L28,46 M50,70 L32,66 M50,30 L68,24 M50,50 L72,46 M50,70 L68,66" stroke="#8BC49E" stroke-width="0.7" fill="none" opacity="0.25"/></g>',
+    ['桑科', '椭圆形', '革质', '大型']
+  ),
+  mat('mat_012', '竹叶', 'leaf',
+    '<g fill="#8BC49E"><path d="M50,8 C44,20 36,40 32,58 C30,68 32,80 38,88 C42,82 48,68 50,52 C52,68 58,82 62,88 C68,80 70,68 68,58 C64,40 56,20 50,8Z" opacity="0.85"/><path d="M50,8 L50,52" stroke="#7BBF96" stroke-width="0.8" fill="none" opacity="0.4"/></g>',
+    ['禾本科', '披针形', '常绿', '平行脉']
+  ),
+  mat('mat_013', '狗尾草', 'grass',
+    '<g fill="#C4D88A"><path d="M50,92 L50,50" stroke="#A8B96A" stroke-width="2" fill="none"/><path d="M50,50 C46,44 44,38 46,32 C48,26 50,22 50,18 C50,22 52,26 54,32 C56,38 54,44 50,50Z" opacity="0.85"/><ellipse cx="50" cy="28" rx="4" ry="10" opacity="0.5" fill="#B8C97A"/><path d="M50,68 C44,64 38,62 34,58" stroke="#A8B96A" stroke-width="1.2" fill="none" opacity="0.5"/><path d="M50,60 C56,56 62,54 66,50" stroke="#A8B96A" stroke-width="1.2" fill="none" opacity="0.5"/></g>',
+    ['禾本科', '穗状', '毛茸', '常见']
+  ),
+  mat('mat_014', '蒲公英', 'grass',
+    '<g fill="#B8C97A"><path d="M50,92 L50,45" stroke="#A8B96A" stroke-width="2" fill="none"/><circle cx="50" cy="32" r="16" fill="none" stroke="#B8C97A" stroke-width="0.8" opacity="0.4"/><path d="M50,32 L50,14 M50,32 L62,18 M50,32 L70,28 M50,32 L68,40 M50,32 L62,48 M50,32 L50,50 M50,32 L38,48 M50,32 L32,40 M50,32 L30,28 M50,32 L38,18" stroke="#C4D88A" stroke-width="0.8" opacity="0.7"/><circle cx="50" cy="32" r="4" fill="#A8B96A" opacity="0.8"/></g>',
+    ['菊科', '种子', '绒毛', '风媒']
+  ),
+  mat('mat_015', '芦苇', 'grass',
+    '<g fill="#A8B96A"><path d="M50,92 L50,38" stroke="#8B9B5A" stroke-width="2" fill="none"/><path d="M50,38 C46,32 44,26 46,20 C48,16 50,12 50,10 C50,12 52,16 54,20 C56,26 54,32 50,38Z" fill="#B8C97A" opacity="0.8"/><path d="M50,60 C42,56 34,54 28,52" stroke="#8B9B5A" stroke-width="1.5" fill="none" opacity="0.5"/><path d="M50,70 C58,66 66,64 72,62" stroke="#8B9B5A" stroke-width="1.5" fill="none" opacity="0.5"/><path d="M42,75 C36,72 30,70 26,68" stroke="#8B9B5A" stroke-width="1" fill="none" opacity="0.3"/></g>',
+    ['禾本科', '水生', '穗状', '高大']
+  ),
+  mat('mat_016', '茅草', 'grass',
+    '<g fill="#C4D88A"><path d="M50,90 C48,70 42,50 30,20 C40,40 46,60 50,80Z" opacity="0.8"/><path d="M50,90 C52,72 56,52 68,22 C58,42 54,62 50,82Z" opacity="0.8"/><path d="M50,90 C50,74 50,54 50,25 C50,54 50,74 50,85Z" fill="#B8C97A" opacity="0.7"/><path d="M50,88 C46,74 38,56 26,30 C38,52 46,70 50,84Z" opacity="0.5"/><path d="M50,88 C54,74 62,56 74,30 C62,52 54,70 50,84Z" opacity="0.5"/></g>',
+    ['禾本科', '丛生', '叶片', '坚韧']
+  ),
+  mat('mat_017', '稗草', 'grass',
+    '<g fill="#B8C97A"><path d="M50,92 L48,48 L44,14" stroke="#A8B96A" stroke-width="1.8" fill="none"/><path d="M44,14 C40,16 36,22 38,30 C40,36 44,40 48,38" fill="#C4D88A" opacity="0.6"/><path d="M50,92 L56,44 L64,12" stroke="#A8B96A" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M64,12 C68,16 70,22 66,28 C62,32 58,34 56,32" fill="#C4D88A" opacity="0.5"/><path d="M50,92 L42,52 L34,20" stroke="#A8B96A" stroke-width="1.2" fill="none" opacity="0.5"/><path d="M34,20 C30,24 28,30 32,34 C36,38 40,36 42,34" fill="#C4D88A" opacity="0.4"/></g>',
+    ['禾本科', '杂草', '稻田', '穗状']
+  ),
+  mat('mat_018', '苔草', 'grass',
+    '<g fill="#A8B96A"><path d="M36,90 C38,72 42,55 48,30 C46,55 42,72 40,88Z" opacity="0.8"/><path d="M50,90 C50,72 50,55 50,25 C50,55 50,72 50,88Z" fill="#B8C97A" opacity="0.85"/><path d="M64,90 C62,72 58,55 52,30 C54,55 58,72 60,88Z" opacity="0.8"/><path d="M28,92 C30,78 34,64 40,44 C36,62 32,78 30,90Z" opacity="0.5"/><path d="M72,92 C70,78 66,64 60,44 C64,62 68,78 70,90Z" opacity="0.5"/></g>',
+    ['莎草科', '丛生', '湿地', '三角形茎']
+  ),
+  mat('mat_019', '覆盆子', 'fruit',
+    '<g fill="#D4A07A"><circle cx="44" cy="38" r="8" opacity="0.85"/><circle cx="56" cy="38" r="8" opacity="0.85"/><circle cx="50" cy="30" r="8" opacity="0.8"/><circle cx="44" cy="50" r="8" opacity="0.75"/><circle cx="56" cy="50" r="8" opacity="0.75"/><circle cx="50" cy="46" r="7" opacity="0.7" fill="#C89070"/><path d="M50,22 C48,18 46,14 48,10 M50,22 C50,16 52,12 54,10 M50,22 C52,18 54,14 52,10" stroke="#8B7355" stroke-width="1.2" fill="none" opacity="0.6"/></g>',
+    ['蔷薇科', '浆果', '红色', '聚合果']
+  ),
+  mat('mat_020', '山楂', 'fruit',
+    '<g fill="#C89070"><circle cx="50" cy="52" r="22" opacity="0.85"/><circle cx="50" cy="52" r="18" fill="#D4A07A" opacity="0.4"/><path d="M50,30 C48,26 46,22 44,20 C46,18 50,18 52,20 C50,22 50,26 50,30Z" fill="#8B7355" opacity="0.7"/><path d="M44,20 C42,16 40,14 38,12" stroke="#8B7355" stroke-width="1" fill="none" opacity="0.5"/><path d="M52,20 C54,16 56,14 58,12" stroke="#8B7355" stroke-width="1" fill="none" opacity="0.5"/></g>',
+    ['蔷薇科', '球形', '酸甜', '秋季']
+  ),
+  mat('mat_021', '枸杞', 'fruit',
+    '<g fill="#E8B090"><path d="M50,18 C42,22 38,35 38,50 C38,65 44,78 50,82 C56,78 62,65 62,50 C62,35 58,22 50,18Z" opacity="0.85"/><path d="M50,22 C44,26 42,36 42,48 C42,60 46,72 50,76 C54,72 58,60 58,48 C58,36 56,26 50,22Z" fill="#D4A07A" opacity="0.4"/><path d="M50,18 C48,14 46,10 44,8 M50,18 C50,12 52,8 54,6" stroke="#8B7355" stroke-width="1" fill="none" opacity="0.6"/></g>',
+    ['茄科', '浆果', '长圆形', '药用']
+  ),
+  mat('mat_022', '石榴', 'fruit',
+    '<g fill="#D4A07A"><circle cx="50" cy="55" r="24" opacity="0.85"/><circle cx="50" cy="55" r="20" fill="#C89070" opacity="0.3"/><path d="M42,31 C40,24 38,18 40,14 C44,12 48,16 50,22 C52,16 56,12 60,14 C62,18 60,24 58,31" fill="#8B7355" opacity="0.7"/><path d="M50,22 L50,31" stroke="#6B5B4E" stroke-width="1" fill="none" opacity="0.5"/></g>',
+    ['石榴科', '球形', '多籽', '秋季']
+  ),
+  mat('mat_023', '柿子', 'fruit',
+    '<g fill="#C89070"><path d="M50,30 C36,30 26,42 26,56 C26,70 36,82 50,82 C64,82 74,70 74,56 C74,42 64,30 50,30Z" opacity="0.85"/><path d="M50,34 C38,34 30,44 30,56 C30,68 38,78 50,78 C62,78 70,68 70,56 C70,44 62,34 50,34Z" fill="#D4A07A" opacity="0.3"/><path d="M38,30 C36,26 38,22 42,24 C44,26 42,28 38,30Z M50,28 C50,24 52,20 54,22 C56,24 54,28 50,28Z M62,30 C64,26 62,22 58,24 C56,26 58,28 62,30Z M44,28 C42,24 44,20 46,22 C48,24 46,26 44,28Z M56,28 C58,24 56,20 54,22 C52,24 54,26 56,28Z" fill="#8B7355" opacity="0.7"/></g>',
+    ['柿科', '球形', '秋季', '可食']
+  ),
+  mat('mat_024', '无花果', 'fruit',
+    '<g fill="#E8B090"><path d="M50,20 C40,22 32,36 32,52 C32,68 40,82 50,85 C60,82 68,68 68,52 C68,36 60,22 50,20Z" opacity="0.85"/><path d="M50,26 C42,28 36,40 36,52 C36,64 42,76 50,78 C58,76 64,64 64,52 C64,40 58,28 50,26Z" fill="#D4A07A" opacity="0.35"/><path d="M50,20 C48,16 46,12 44,10 M50,20 C50,14 52,10 54,8 M50,20 C52,16 54,12 52,10" stroke="#8B7355" stroke-width="1" fill="none" opacity="0.6"/></g>',
+    ['桑科', '梨形', '隐头花序', '秋季']
+  ),
+  mat('mat_025', '柳枝', 'branch',
+    '<g fill="#A08060"><path d="M20,15 C30,25 40,40 55,55 C65,65 75,72 85,78" stroke="#8B7355" stroke-width="2.5" fill="none" opacity="0.8"/><path d="M40,38 C36,32 32,24 28,18" stroke="#A08060" stroke-width="1.5" fill="none" opacity="0.6"/><path d="M50,50 C48,44 44,36 42,28" stroke="#A08060" stroke-width="1.5" fill="none" opacity="0.6"/><path d="M60,58 C58,50 56,42 55,34" stroke="#A08060" stroke-width="1.5" fill="none" opacity="0.6"/><path d="M70,66 C68,58 66,50 66,42" stroke="#A08060" stroke-width="1.5" fill="none" opacity="0.6"/><path d="M28,18 C24,14 22,10 24,8 C26,6 30,8 32,12 C30,16 28,18 28,18Z" fill="#8BC49E" opacity="0.5"/><path d="M42,28 C38,24 36,20 38,18 C40,16 44,18 44,22 C44,26 42,28 42,28Z" fill="#8BC49E" opacity="0.5"/><path d="M55,34 C52,30 50,26 52,24 C54,22 58,24 58,28 C58,32 55,34 55,34Z" fill="#8BC49E" opacity="0.5"/><path d="M66,42 C64,38 62,34 64,32 C66,30 70,32 70,36 C68,40 66,42 66,42Z" fill="#8BC49E" opacity="0.5"/></g>',
+    ['杨柳科', '下垂', '柔韧', '春季']
+  ),
+  mat('mat_026', '松枝', 'branch',
+    '<g fill="#8B7355"><path d="M15,50 C30,48 50,46 75,44 C82,43 88,44 92,46" stroke="#8B7355" stroke-width="3" fill="none" opacity="0.8"/><path d="M28,50 L22,36 M32,49 L28,34 M38,48 L36,32 M44,47 L44,30 M50,46 L50,28 M56,46 L56,30 M62,45 L62,32 M68,44 L66,34 M74,44 L72,36 M80,44 L78,38" stroke="#6BAF88" stroke-width="1.2" fill="none" opacity="0.7"/><path d="M28,50 L22,62 M32,49 L28,64 M38,48 L36,66 M44,47 L44,68 M50,46 L50,70 M56,46 L56,68 M62,45 L62,66 M68,44 L66,64 M74,44 L72,62" stroke="#6BAF88" stroke-width="1.2" fill="none" opacity="0.7"/></g>',
+    ['松科', '针叶', '常绿', '树脂']
+  ),
+  mat('mat_027', '梅枝', 'branch',
+    '<g fill="#9B8365"><path d="M80,20 C70,30 55,38 40,48 C30,54 22,62 15,72" stroke="#8B7355" stroke-width="2.5" fill="none" opacity="0.8"/><path d="M55,36 C50,30 44,26 40,28" stroke="#9B8365" stroke-width="2" fill="none" opacity="0.6"/><path d="M35,50 C28,46 22,48 18,52" stroke="#9B8365" stroke-width="1.8" fill="none" opacity="0.6"/><circle cx="40" cy="28" r="4" fill="#E8C4C4" opacity="0.7"/><circle cx="55" cy="34" r="3.5" fill="#D4A0B0" opacity="0.7"/><circle cx="18" cy="52" r="4" fill="#E8C4C4" opacity="0.6"/><circle cx="30" cy="55" r="3" fill="#D4A0B0" opacity="0.6"/><circle cx="45" cy="42" r="3" fill="#E8C4C4" opacity="0.5"/></g>',
+    ['蔷薇科', '冬季', '花枝', '苍劲']
+  ),
+  mat('mat_028', '竹枝', 'branch',
+    '<g fill="#A08060"><path d="M50,8 L50,92" stroke="#8B9B5A" stroke-width="3" fill="none" opacity="0.7"/><path d="M50,28 L50,32" stroke="#6B8040" stroke-width="5" fill="none" opacity="0.5"/><path d="M50,52 L50,56" stroke="#6B8040" stroke-width="5" fill="none" opacity="0.5"/><path d="M50,76 L50,80" stroke="#6B8040" stroke-width="5" fill="none" opacity="0.5"/><path d="M50,28 C44,24 36,20 30,18" stroke="#8BC49E" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M50,52 C56,48 64,44 70,42" stroke="#8BC49E" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M50,76 C44,72 36,68 30,66" stroke="#8BC49E" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M30,18 C26,14 24,10 26,8 C28,6 32,8 34,12 C32,16 30,18 30,18Z" fill="#8BC49E" opacity="0.6"/><path d="M70,42 C74,38 76,34 74,32 C72,30 68,32 66,36 C68,40 70,42 70,42Z" fill="#8BC49E" opacity="0.6"/><path d="M30,66 C26,62 24,58 26,56 C28,54 32,56 34,60 C32,64 30,66 30,66Z" fill="#8BC49E" opacity="0.6"/></g>',
+    ['禾本科', '节状', '中空', '常绿']
+  ),
+  mat('mat_029', '柏枝', 'branch',
+    '<g fill="#9B8365"><path d="M50,90 L50,60" stroke="#8B7355" stroke-width="2.5" fill="none" opacity="0.7"/><path d="M50,60 C40,55 30,50 22,42 C16,36 12,28 14,22 C16,18 20,18 24,22 C28,28 34,38 42,46 C46,50 48,54 50,60Z" fill="#6BAF88" opacity="0.6"/><path d="M50,60 C60,55 70,50 78,42 C84,36 88,28 86,22 C84,18 80,18 76,22 C72,28 66,38 58,46 C54,50 52,54 50,60Z" fill="#6BAF88" opacity="0.6"/><path d="M50,60 C46,52 42,42 38,34 C36,28 36,22 40,20 C42,18 46,20 48,24 C50,30 50,40 50,50Z" fill="#7BBF96" opacity="0.4"/><path d="M50,60 C54,52 58,42 62,34 C64,28 64,22 60,20 C58,18 54,20 52,24 C50,30 50,40 50,50Z" fill="#7BBF96" opacity="0.4"/></g>',
+    ['柏科', '鳞叶', '常绿', '扇形']
+  ),
+  mat('mat_030', '铁线蕨', 'fern',
+    '<g fill="#6B9F7B"><path d="M50,90 L50,55" stroke="#5B8F6B" stroke-width="1.5" fill="none" opacity="0.6"/><path d="M50,55 C42,48 30,42 22,38 C18,36 16,34 18,32 C20,30 24,32 28,34 C36,38 44,44 50,50Z" opacity="0.75"/><path d="M50,55 C58,48 70,42 78,38 C82,36 84,34 82,32 C80,30 76,32 72,34 C64,38 56,44 50,50Z" opacity="0.75"/><path d="M50,48 C44,42 34,36 26,32 C22,30 20,28 22,26 C24,24 28,26 32,28 C40,32 46,38 50,44Z" opacity="0.6"/><path d="M50,48 C56,42 66,36 74,32 C78,30 80,28 78,26 C76,24 72,26 68,28 C60,32 54,38 50,44Z" opacity="0.6"/><path d="M50,90 C48,86 46,82 44,78" stroke="#5B8F6B" stroke-width="1" fill="none" opacity="0.4"/><path d="M50,90 C52,86 54,82 56,78" stroke="#5B8F6B" stroke-width="1" fill="none" opacity="0.4"/></g>',
+    ['铁线蕨科', '扇形小叶', '阴生', ' delicate']
+  ),
+  mat('mat_031', '鹿角蕨', 'fern',
+    '<g fill="#5B8F6B"><path d="M50,90 L50,50" stroke="#4B7F5B" stroke-width="2" fill="none" opacity="0.6"/><path d="M50,50 C42,40 32,35 20,32 C14,30 10,32 12,36 C14,40 22,42 30,44 C38,46 46,48 50,50Z" opacity="0.8"/><path d="M50,50 C58,40 68,35 80,32 C86,30 90,32 88,36 C86,40 78,42 70,44 C62,46 54,48 50,50Z" opacity="0.8"/><path d="M50,40 C44,30 34,22 24,16 C18,12 14,14 16,18 C18,22 26,26 34,30 C42,34 48,38 50,40Z" opacity="0.7"/><path d="M50,40 C56,30 66,22 76,16 C82,12 86,14 84,18 C82,22 74,26 66,30 C58,34 52,38 50,40Z" opacity="0.7"/><path d="M50,35 C48,26 44,18 38,10 C36,8 34,8 34,10 C36,14 40,20 44,28 C46,32 48,34 50,35Z" opacity="0.6"/><path d="M50,35 C52,26 56,18 62,10 C64,8 66,8 66,10 C64,14 60,20 56,28 C54,32 52,34 50,35Z" opacity="0.6"/></g>',
+    ['水龙骨科', '叉状', '附生', '大型']
+  ),
+  mat('mat_032', '鸟巢蕨', 'fern',
+    '<g fill="#7BAF8B"><path d="M50,90 C48,80 42,65 30,40 C24,28 18,18 14,12 C12,10 14,8 18,10 C24,14 32,24 40,38 C46,50 50,65 50,80Z" opacity="0.8"/><path d="M50,90 C52,80 58,65 70,40 C76,28 82,18 86,12 C88,10 86,8 82,10 C76,14 68,24 60,38 C54,50 50,65 50,80Z" opacity="0.8"/><path d="M50,90 C50,78 50,62 50,45 C50,30 50,18 50,8" stroke="#6B9F7B" stroke-width="1.5" fill="none" opacity="0.4"/><path d="M50,70 C44,60 36,48 26,36" stroke="#6B9F7B" stroke-width="0.8" fill="none" opacity="0.3"/><path d="M50,70 C56,60 64,48 74,36" stroke="#6B9F7B" stroke-width="0.8" fill="none" opacity="0.3"/><path d="M30,40 C26,38 22,38 20,40 C22,42 26,42 30,40Z" opacity="0.5"/><path d="M70,40 C74,38 78,38 80,40 C78,42 74,42 70,40Z" opacity="0.5"/></g>',
+    ['铁角蕨科', '波状', '附生', '大型']
+  ),
+  mat('mat_033', '肾蕨', 'fern',
+    '<g fill="#6B9F7B"><path d="M50,90 L50,55" stroke="#5B8F6B" stroke-width="2" fill="none" opacity="0.6"/><path d="M50,55 C42,48 34,38 26,28 C22,24 18,20 16,16 C14,12 18,10 22,14 C28,20 34,30 40,40 C44,46 48,52 50,55Z" opacity="0.8"/><path d="M50,55 C58,48 66,38 74,28 C78,24 82,20 84,16 C86,12 82,10 78,14 C72,20 66,30 60,40 C56,46 52,52 50,55Z" opacity="0.8"/><path d="M38,40 C34,36 28,34 24,32 C20,30 18,32 20,34 C24,36 30,38 38,40Z" opacity="0.6"/><path d="M62,40 C66,36 72,34 76,32 C80,30 82,32 80,34 C76,36 70,38 62,40Z" opacity="0.6"/><path d="M34,34 C30,28 24,22 20,18 C18,16 16,16 18,18 C20,22 26,28 34,34Z" opacity="0.5"/><path d="M66,34 C70,28 76,22 80,18 C82,16 84,16 82,18 C80,22 74,28 66,34Z" opacity="0.5"/></g>',
+    ['肾蕨科', '弓形', '羽状复叶', '地下茎']
+  ),
+  mat('mat_034', '鳞盖蕨', 'fern',
+    '<g fill="#5B8F6B"><path d="M50,90 L50,60" stroke="#4B7F5B" stroke-width="1.8" fill="none" opacity="0.6"/><path d="M50,60 C36,52 22,42 14,30 C10,24 8,18 12,16 C16,14 20,18 24,24 C30,32 40,44 50,55Z" opacity="0.8"/><path d="M50,60 C64,52 78,42 86,30 C90,24 92,18 88,16 C84,14 80,18 76,24 C70,32 60,44 50,55Z" opacity="0.8"/><path d="M36,44 C30,38 22,30 16,22 C14,18 12,16 14,14 C16,12 20,14 22,18 C26,24 32,34 36,44Z" opacity="0.6"/><path d="M64,44 C70,38 78,30 84,22 C86,18 88,16 86,14 C84,12 80,14 78,18 C74,24 68,34 64,44Z" opacity="0.6"/><path d="M28,36 C22,28 16,20 12,14 C10,10 10,8 12,8 C14,8 18,12 22,18 C26,24 28,32 28,36Z" opacity="0.4"/><path d="M72,36 C78,28 84,20 88,14 C90,10 90,8 88,8 C86,8 82,12 78,18 C74,24 72,32 72,36Z" opacity="0.4"/></g>',
+    ['碗蕨科', '三角形', '细裂', '鳞片']
+  ),
+  mat('mat_035', '桫椤', 'fern',
+    '<g fill="#7BAF8B"><path d="M50,92 L50,65" stroke="#6B9F7B" stroke-width="3" fill="none" opacity="0.7"/><path d="M50,65 C38,55 24,45 12,35 C8,32 6,28 10,26 C14,24 18,28 22,32 C32,40 42,50 50,60Z" opacity="0.8"/><path d="M50,65 C62,55 76,45 88,35 C92,32 94,28 90,26 C86,24 82,28 78,32 C68,40 58,50 50,60Z" opacity="0.8"/><path d="M50,55 C40,48 28,38 18,28 C14,24 12,20 14,18 C16,16 20,18 24,22 C32,30 42,42 50,52Z" opacity="0.7"/><path d="M50,55 C60,48 72,38 82,28 C86,24 88,20 86,18 C84,16 80,18 76,22 C68,30 58,42 50,52Z" opacity="0.7"/><path d="M50,48 C44,42 34,32 26,22 C22,18 20,14 22,12 C24,10 28,12 30,16 C36,24 44,36 50,44Z" opacity="0.6"/><path d="M50,48 C56,42 66,32 74,22 C78,18 80,14 78,12 C76,10 72,12 70,16 C64,24 56,36 50,44Z" opacity="0.6"/><path d="M24,32 C20,28 14,24 10,20 C8,18 6,16 8,14 C10,12 14,14 16,18 C20,22 22,28 24,32Z" opacity="0.5"/><path d="M76,32 C80,28 86,24 90,20 C92,18 94,16 92,14 C90,12 86,14 84,18 C80,22 78,28 76,32Z" opacity="0.5"/></g>',
+    ['桫椤科', '大型', '树蕨', '古老']
+  ),
+]

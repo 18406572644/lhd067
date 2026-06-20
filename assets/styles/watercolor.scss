@@ -1,0 +1,36 @@
+.watercard {
+  @apply bg-white/60 backdrop-blur-sm rounded-2xl border border-herb-brown-light/30 shadow-sm;
+  transition: all 0.3s ease;
+
+  &:hover {
+    @apply shadow-md;
+  }
+}
+
+.watercolor-border {
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, #A8D5BA, #C5B3D8) 1;
+  animation: watercolor-border-pulse 3s ease-in-out infinite;
+}
+
+@keyframes watercolor-border-pulse {
+  0%, 100% {
+    border-image-source: linear-gradient(135deg, #A8D5BA, #C5B3D8);
+  }
+  50% {
+    border-image-source: linear-gradient(135deg, #C5B3D8, #A8D5BA);
+  }
+}
+
+.handwrite-text {
+  @apply font-handwrite;
+  letter-spacing: 0.05em;
+}
+
+.specimen-frame {
+  border: 3px double rgba(107, 91, 78, 0.3);
+  box-shadow:
+    inset 0 0 12px rgba(107, 91, 78, 0.08),
+    0 1px 4px rgba(107, 91, 78, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}

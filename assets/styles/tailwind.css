@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-serif text-herb-brown bg-herb-cream;
+  }
+
+  ::selection {
+    @apply bg-herb-green/30 text-herb-brown;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 213, 186, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 213, 186, 0.7);
+}
+
+:root {
+  --el-color-primary: #A8D5BA;
+  --el-color-primary-light-3: #C8E6D4;
+  --el-color-primary-light-5: #D8EDDF;
+  --el-color-primary-light-7: #E8F4EC;
+  --el-color-primary-light-8: #F0F8F2;
+  --el-color-primary-light-9: #F5FBF7;
+  --el-color-primary-dark-2: #7BBF96;
+  --el-color-success: #A8D5BA;
+  --el-color-warning: #D4C5B2;
+  --el-color-danger: #E8C4C4;
+  --el-color-info: #C5B3D8;
+  --el-bg-color: #F5F0E8;
+  --el-bg-color-page: #F5F0E8;
+  --el-bg-color-overlay: #FFFFFF;
+  --el-text-color-primary: #6B5B4E;
+  --el-text-color-regular: #6B5B4E;
+  --el-text-color-secondary: #8B7B6E;
+  --el-text-color-placeholder: #A89888;
+  --el-border-color: #D4C5B2;
+  --el-border-color-light: #E8DCC8;
+  --el-border-color-lighter: #F0E8D8;
+  --el-border-color-extra-light: #F5F0E8;
+  --el-fill-color: #F5F0E8;
+  --el-fill-color-light: #FAF6F0;
+  --el-fill-color-lighter: #FDF9F5;
+  --el-fill-color-extra-light: #FEFBF8;
+  --el-fill-color-blank: #FFFFFF;
+  --el-border-radius-base: 8px;
+  --el-border-radius-round: 20px;
+  --el-font-family: 'Noto Serif SC', serif;
+}
