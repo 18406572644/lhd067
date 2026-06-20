@@ -107,6 +107,10 @@ declare global {
   const preloadRouteComponents: typeof import('../../node_modules/nuxt/dist/app/composables/preload')['preloadRouteComponents']
   const prerenderRoutes: typeof import('../../node_modules/nuxt/dist/app/composables/ssr')['prerenderRoutes']
   const processColorAdjustment: typeof import('../../utils/filterEffects')['processColorAdjustment']
+  const processDiffuseDirect: typeof import('../../utils/filterEffects')['processDiffuseDirect']
+  const processTextureDirect: typeof import('../../utils/filterEffects')['processTextureDirect']
+  const processVintageDirect: typeof import('../../utils/filterEffects')['processVintageDirect']
+  const processWatercolorDirect: typeof import('../../utils/filterEffects')['processWatercolorDirect']
   const provide: typeof import('../../node_modules/vue')['provide']
   const proxyRefs: typeof import('../../node_modules/vue')['proxyRefs']
   const reactive: typeof import('../../node_modules/vue')['reactive']
@@ -163,6 +167,7 @@ declare global {
   const useModel: typeof import('../../node_modules/vue')['useModel']
   const useNuxtApp: typeof import('../../node_modules/nuxt/dist/app/nuxt')['useNuxtApp']
   const useNuxtData: typeof import('../../node_modules/nuxt/dist/app/composables/asyncData')['useNuxtData']
+  const useNuxtDevTools: typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']
   const usePinia: typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['usePinia']
   const usePreviewMode: typeof import('../../node_modules/nuxt/dist/app/composables/preview')['usePreviewMode']
   const useProject: typeof import('../../composables/useProject')['useProject']
@@ -311,6 +316,10 @@ declare module 'vue' {
     readonly preloadRouteComponents: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/preload')['preloadRouteComponents']>
     readonly prerenderRoutes: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/ssr')['prerenderRoutes']>
     readonly processColorAdjustment: UnwrapRef<typeof import('../../utils/filterEffects')['processColorAdjustment']>
+    readonly processDiffuseDirect: UnwrapRef<typeof import('../../utils/filterEffects')['processDiffuseDirect']>
+    readonly processTextureDirect: UnwrapRef<typeof import('../../utils/filterEffects')['processTextureDirect']>
+    readonly processVintageDirect: UnwrapRef<typeof import('../../utils/filterEffects')['processVintageDirect']>
+    readonly processWatercolorDirect: UnwrapRef<typeof import('../../utils/filterEffects')['processWatercolorDirect']>
     readonly provide: UnwrapRef<typeof import('../../node_modules/vue')['provide']>
     readonly proxyRefs: UnwrapRef<typeof import('../../node_modules/vue')['proxyRefs']>
     readonly reactive: UnwrapRef<typeof import('../../node_modules/vue')['reactive']>
@@ -367,6 +376,7 @@ declare module 'vue' {
     readonly useModel: UnwrapRef<typeof import('../../node_modules/vue')['useModel']>
     readonly useNuxtApp: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/nuxt')['useNuxtApp']>
     readonly useNuxtData: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/asyncData')['useNuxtData']>
+    readonly useNuxtDevTools: UnwrapRef<typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']>
     readonly usePinia: UnwrapRef<typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['usePinia']>
     readonly usePreviewMode: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/preview')['usePreviewMode']>
     readonly useProject: UnwrapRef<typeof import('../../composables/useProject')['useProject']>

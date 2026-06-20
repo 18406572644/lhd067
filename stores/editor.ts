@@ -16,6 +16,7 @@ export const useEditorStore = defineStore('editor', {
     exportSettings: {
       format: 'png' as const,
       dpi: 300 as const,
+      quality: 90,
       showBorder: true,
       borderStyle: 'simple' as const
     } as ExportSettings,
@@ -119,6 +120,7 @@ export const useEditorStore = defineStore('editor', {
       this.exportSettings = {
         format: 'png',
         dpi: 300,
+        quality: 90,
         showBorder: true,
         borderStyle: 'simple'
       }

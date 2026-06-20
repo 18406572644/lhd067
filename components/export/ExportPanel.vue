@@ -33,6 +33,24 @@ function handleExport() {
         </el-radio-group>
       </div>
 
+      <div v-if="editorStore.exportSettings.format === 'jpg'">
+        <label class="block font-serif text-sm text-herb-brown mb-2">
+          质量: {{ editorStore.exportSettings.quality }}%
+        </label>
+        <el-slider
+          :model-value="editorStore.exportSettings.quality"
+          :min="0"
+          :max="100"
+          :step="1"
+          :show-tooltip="false"
+          @update:model-value="(v: any) => editorStore.setExportSettings({ quality: v })"
+        />
+        <div class="flex justify-between text-xs text-herb-brown/40 mt-1">
+          <span>小文件</span>
+          <span>高质量</span>
+        </div>
+      </div>
+
       <div>
         <label class="block font-serif text-sm text-herb-brown mb-2">分辨率</label>
         <el-select :model-value="editorStore.exportSettings.dpi" class="w-full" @update:model-value="(v: any) => editorStore.setExportSettings({ dpi: v })">

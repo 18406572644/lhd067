@@ -64,9 +64,10 @@ export function exportCanvasAsImage(fabricCanvas: any, settings: ExportSettings)
   return new Promise((resolve, reject) => {
     try {
       const multiplier = settings.dpi / 96
+      const quality = settings.format === 'jpg' ? (settings.quality || 90) / 100 : undefined
       const dataUrl = fabricCanvas.toDataURL({
-        format: settings.format === 'jpeg' ? 'jpeg' : 'png',
-        quality: settings.quality,
+        format: settings.format === 'jpg' ? 'jpeg' : 'png',
+        quality: quality,
         multiplier
       })
 

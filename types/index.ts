@@ -95,6 +95,7 @@ export interface CanvasObjectData {
 export interface ExportSettings {
   format: 'png' | 'jpg'
   dpi: 150 | 300 | 600
+  quality: number
   showBorder: boolean
   borderStyle: 'none' | 'simple' | 'botanical'
 }

@@ -621,7 +621,7 @@ function applyFilterProcessors(
   ctx.putImageData(imageData, 0, 0)
 }
 
-function processWatercolorDirect(pixels: ImageData, intensity: number) {
+export function processWatercolorDirect(pixels: ImageData, intensity: number) {
   const norm = intensity / 100
   const data = pixels.data
   const w = pixels.width
@@ -656,7 +656,7 @@ function processWatercolorDirect(pixels: ImageData, intensity: number) {
   }
 }
 
-function processDiffuseDirect(pixels: ImageData, intensity: number) {
+export function processDiffuseDirect(pixels: ImageData, intensity: number) {
   const norm = intensity / 100
   const data = pixels.data
   const w = pixels.width
@@ -720,7 +720,7 @@ function processDiffuseDirect(pixels: ImageData, intensity: number) {
   }
 }
 
-function processTextureDirect(pixels: ImageData, intensity: number) {
+export function processTextureDirect(pixels: ImageData, intensity: number) {
   const norm = intensity / 100
   const data = pixels.data
   const w = pixels.width
@@ -769,7 +769,7 @@ function processTextureDirect(pixels: ImageData, intensity: number) {
   }
 }
 
-function processVintageDirect(pixels: ImageData, intensity: number) {
+export function processVintageDirect(pixels: ImageData, intensity: number) {
   const norm = intensity / 100
   const data = pixels.data
   

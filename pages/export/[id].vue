@@ -20,6 +20,7 @@ const labels = computed(() => editorStore.labels)
 const settings = computed(() => editorStore.exportSettings)
 const canvasObjects = computed(() => editorStore.canvasObjects)
 const canvasObjectCount = computed(() => editorStore.canvasObjects.length)
+const filters = computed(() => editorStore.filters)
 
 onMounted(() => {
   if (import.meta.client) {
@@ -107,6 +108,7 @@ function handleBack() {
             :labels="labels"
             :show-border="settings.showBorder"
             :border-style="settings.borderStyle"
+            :filters="filters"
           />
         </ClientOnly>
       </div>
