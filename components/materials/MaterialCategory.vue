@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { MaterialCategory } from '~/types'
-import { Flower2, Leaf, Wheat, Cherry, TreePine, Palmtree } from 'lucide-vue-next'
+import { Flower2, Leaf, Wheat, Cherry, TreePine, Palmtree, Folder } from 'lucide-vue-next'
 import { markRaw, type Component } from 'vue'
 
 const props = defineProps<{
@@ -19,6 +19,7 @@ const iconMap: Record<string, Component> = {
   Cherry: markRaw(Cherry),
   TreePine: markRaw(TreePine),
   Palmtree: markRaw(Palmtree),
+  Folder: markRaw(Folder),
 }
 
 const IconComponent = computed(() => iconMap[props.category.icon] || Leaf)

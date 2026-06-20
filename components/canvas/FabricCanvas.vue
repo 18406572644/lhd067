@@ -154,6 +154,62 @@ function animateEntrance(obj: any) {
 async function addMaterial(material: PlantMaterial, position?: { x: number; y: number }) {
   if (!canvas || !fabric) return
 
+  const matWithImg = material as any
+  const isPngUserMaterial = matWithImg.format === 'png' && matWithImg.imageData
+
+  const center = canvas.getCenter()
+  const posX = position?.x ?? center.left
+  const posY = position?.y ?? center.top
+  const objId = 'obj_' + Date.now()
+
+  if (isPngUserMaterial) {
+    const img = await new Promise<any>((resolve) => {
+      fabric.Image.fromURL(matWithImg.imageData, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
+    })
+    if (!img) return
+
+    const maxSize = 200
+    if (img.width! > img.height!) {
+      img.scaleToWidth(maxSize)
+    } else {
+      img.scaleToHeight(maxSize)
+    }
+
+    img.set({
+      left: posX,
+      top: posY,
+      originX: 'center',
+      originY: 'center',
+      id: objId
+    })
+
+    animateEntrance(img)
+    canvas.add(img)
+    canvas.setActiveObject(img)
+    canvas.renderAll()
+
+    editorStore.selectObject(img.id)
+    emit('object-added', img)
+
+    editorStore.addCanvasObject({
+      id: img.id,
+      materialId: material.id,
+      type: 'uploaded',
+      x: img.left!,
+      y: img.top!,
+      scaleX: img.scaleX!,
+      scaleY: img.scaleY!,
+      angle: img.angle!,
+      opacity: img.opacity!,
+      zIndex: canvas.getObjects().indexOf(img),
+      name: material.name,
+      imageData: matWithImg.imageData
+    })
+    return
+  }
+
+  if (!material.svgData) return
+
   const group = await new Promise<any>((resolve) => {
     fabric.loadSVGFromString(material.svgData, (objects: any[], options: any) => {
       resolve(fabric.util.groupSVGElements(objects, options))
@@ -163,16 +219,12 @@ async function addMaterial(material: PlantMaterial, position?: { x: number; y: n
 
   group.scaleToWidth(120)
 
-  const center = canvas.getCenter()
-  const posX = position?.x ?? center.left
-  const posY = position?.y ?? center.top
-
   group.set({
     left: posX,
     top: posY,
     originX: 'center',
     originY: 'center',
-    id: 'obj_' + Date.now()
+    id: objId
   })
 
   animateEntrance(group)

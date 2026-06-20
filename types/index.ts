@@ -1,3 +1,7 @@
+export type MaterialType = 'builtin' | 'user'
+
+export type UserMaterialCategory = 'flower' | 'leaf' | 'grass' | 'fruit' | 'branch' | 'fern' | 'other'
+
 export interface PlantMaterial {
   id: string
   name: string
@@ -5,6 +9,27 @@ export interface PlantMaterial {
   thumbnail: string
   svgData: string
   tags: string[]
+  type?: MaterialType
+}
+
+export interface UserMaterial {
+  id: string
+  name: string
+  category: UserMaterialCategory
+  format: 'svg' | 'png'
+  thumbnail: string
+  data: string
+  tags: string[]
+  size: number
+  createdAt: number
+  updatedAt: number
+  type: 'user'
+}
+
+export interface UserMaterialStoreStats {
+  totalSize: number
+  count: number
+  maxSize: number
 }
 
 export interface MaterialCategory {
