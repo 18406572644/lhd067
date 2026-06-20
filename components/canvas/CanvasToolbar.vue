@@ -4,6 +4,7 @@ import { useProjectStore } from '~/stores/project'
 import {
   Upload,
   Tag,
+  Type,
   Undo2,
   Redo2,
   Trash2,
@@ -17,6 +18,7 @@ import {
 const emit = defineEmits<{
   'upload-photo': []
   'add-label': []
+  'add-text': []
   'zoom-in': []
   'zoom-out': []
   'fit-screen': []
@@ -61,6 +63,15 @@ function handleExport() {
         @click="emit('add-label')"
       >
         <Tag :size="18" />
+      </button>
+    </el-tooltip>
+
+    <el-tooltip content="添加文字" placement="bottom">
+      <button
+        class="hover:bg-herb-green/20 rounded-lg p-2 transition-all text-herb-brown"
+        @click="emit('add-text')"
+      >
+        <Type :size="18" />
       </button>
     </el-tooltip>
 

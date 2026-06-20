@@ -80,15 +80,38 @@ async function initCanvas() {
       if (isSyncingFromStore) return
       const obj = e.target
       if (obj && obj.id) {
-        editorStore.updateCanvasObject(obj.id, {
+        const updates: any = {
           x: obj.left,
           y: obj.top,
           scaleX: obj.scaleX,
           scaleY: obj.scaleY,
           angle: obj.angle,
           opacity: obj.opacity
-        })
+        }
+        if (obj.type === 'i-text') {
+          updates.text = obj.text
+          updates.fontFamily = obj.fontFamily
+          updates.fontSize = obj.fontSize
+          updates.fill = obj.fill
+          updates.fontWeight = obj.fontWeight
+          updates.fontStyle = obj.fontStyle
+          updates.underline = obj.underline
+          updates.textAlign = obj.textAlign
+          updates.lineHeight = obj.lineHeight
+          updates.charSpacing = obj.charSpacing
+        }
+        editorStore.updateCanvasObject(obj.id, updates)
         emit('object-modified', obj)
+      }
+    })
+
+    canvas.on('text:changed', (e: any) => {
+      if (isSyncingFromStore) return
+      const obj = e.target
+      if (obj && obj.id) {
+        editorStore.updateCanvasObject(obj.id, {
+          text: obj.text
+        })
       }
     })
 
@@ -253,6 +276,101 @@ async function addMaterial(material: PlantMaterial, position?: { x: number; y: n
   })
 }
 
+function addTextObject(options?: {
+  text?: string
+  fontFamily?: string
+  fontSize?: number
+  fill?: string
+  fontWeight?: string
+  fontStyle?: string
+  underline?: boolean
+  textAlign?: string
+  lineHeight?: number
+  charSpacing?: number
+}) {
+  if (!canvas || !fabric) return
+
+  const center = canvas.getCenter()
+  const objId = 'obj_' + Date.now()
+
+  const textObj = new fabric.IText(options?.text || '双击编辑文字', {
+    left: center.left,
+    top: center.top,
+    originX: 'center',
+    originY: 'center',
+    id: objId,
+    fontFamily: options?.fontFamily || 'Noto Sans SC',
+    fontSize: options?.fontSize || 28,
+    fill: options?.fill || '#6B5B4E',
+    fontWeight: options?.fontWeight || 'normal',
+    fontStyle: options?.fontStyle || 'normal',
+    underline: options?.underline || false,
+    textAlign: options?.textAlign || 'left',
+    lineHeight: options?.lineHeight || 1.4,
+    charSpacing: options?.charSpacing || 0,
+    editable: true
+  })
+
+  animateEntrance(textObj)
+  canvas.add(textObj)
+  canvas.setActiveObject(textObj)
+  canvas.renderAll()
+
+  editorStore.selectObject(textObj.id)
+  emit('object-added', textObj)
+
+  editorStore.addCanvasObject({
+    id: textObj.id,
+    type: 'text',
+    x: textObj.left!,
+    y: textObj.top!,
+    scaleX: textObj.scaleX!,
+    scaleY: textObj.scaleY!,
+    angle: textObj.angle!,
+    opacity: textObj.opacity!,
+    zIndex: canvas.getObjects().indexOf(textObj),
+    name: '文字',
+    text: textObj.text,
+    fontFamily: textObj.fontFamily,
+    fontSize: textObj.fontSize,
+    fill: textObj.fill as string,
+    fontWeight: textObj.fontWeight as string,
+    fontStyle: textObj.fontStyle as string,
+    underline: textObj.underline as boolean,
+    textAlign: textObj.textAlign as string,
+    lineHeight: textObj.lineHeight as number,
+    charSpacing: textObj.charSpacing as number
+  })
+}
+
+function updateTextObject(props: Record<string, any>) {
+  if (!canvas || !fabric) return
+  const active = canvas.getActiveObject() as any
+  if (!active || active.type !== 'i-text' || !active.id) return
+
+  active.set(props)
+  canvas.renderAll()
+
+  editorStore.updateCanvasObject(active.id, {
+    text: active.text,
+    fontFamily: active.fontFamily,
+    fontSize: active.fontSize,
+    fill: active.fill,
+    fontWeight: active.fontWeight,
+    fontStyle: active.fontStyle,
+    underline: active.underline,
+    textAlign: active.textAlign,
+    lineHeight: active.lineHeight,
+    charSpacing: active.charSpacing,
+    scaleX: active.scaleX,
+    scaleY: active.scaleY,
+    angle: active.angle,
+    opacity: active.opacity,
+    x: active.left,
+    y: active.top
+  })
+}
+
 async function addUploadedImage(dataUrl: string) {
   if (!canvas || !fabric) return
 
@@ -366,7 +484,7 @@ async function loadCanvasFromStore() {
     const storeIds = new Set(storeObjects.map(o => o.id))
 
     if (canvasIds.size === storeIds.size &&
-        [...canvasIds].every(id => storeIds.has(id))) {
+        [...canvasIds].every((id: string) => storeIds.has(id))) {
       return
     }
 
@@ -413,6 +531,29 @@ async function loadCanvasFromStore() {
             })
             canvas.add(img)
           }
+        } else if (objData.type === 'text') {
+          const textObj = new fabric.IText(objData.text || '双击编辑文字', {
+            left: objData.x,
+            top: objData.y,
+            originX: 'center',
+            originY: 'center',
+            id: objData.id,
+            fontFamily: objData.fontFamily || 'Noto Sans SC',
+            fontSize: objData.fontSize || 28,
+            fill: objData.fill || '#6B5B4E',
+            fontWeight: objData.fontWeight || 'normal',
+            fontStyle: objData.fontStyle || 'normal',
+            underline: objData.underline || false,
+            textAlign: objData.textAlign || 'left',
+            lineHeight: objData.lineHeight || 1.4,
+            charSpacing: objData.charSpacing || 0,
+            scaleX: objData.scaleX,
+            scaleY: objData.scaleY,
+            angle: objData.angle,
+            opacity: objData.opacity,
+            editable: true
+          })
+          canvas.add(textObj)
         }
       } catch (e) {
         console.error('[FabricCanvas] Error restoring object:', objData.id, e)
@@ -552,6 +693,8 @@ defineExpose({
   get canvas() { return canvas },
   addMaterial,
   addUploadedImage,
+  addTextObject,
+  updateTextObject,
   getCanvasData,
   clearCanvas,
   zoomIn,

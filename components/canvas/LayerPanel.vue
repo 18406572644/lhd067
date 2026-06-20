@@ -4,6 +4,7 @@ import {
   Layers,
   GripVertical,
   Leaf,
+  Type,
   Eye,
   EyeOff,
   X
@@ -49,11 +50,12 @@ function isVisible(id: string) {
         <GripVertical :size="14" class="text-herb-brown/30 shrink-0" />
 
         <div class="w-8 h-8 rounded flex items-center justify-center bg-herb-green-light/30 shrink-0">
-          <Leaf :size="16" class="text-herb-green-dark" />
+          <Type v-if="object.type === 'text'" :size="16" class="text-herb-green-dark" />
+          <Leaf v-else :size="16" class="text-herb-green-dark" />
         </div>
 
         <span class="flex-1 text-sm text-herb-brown truncate">
-          {{ object.name || `素材 ${object.id.slice(-4)}` }}
+          {{ object.type === 'text' ? (object.text || '文字').slice(0, 8) : (object.name || `素材 ${object.id.slice(-4)}`) }}
         </span>
 
         <button

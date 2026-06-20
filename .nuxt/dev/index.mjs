@@ -1137,19 +1137,19 @@ _Z3oG9jzZoIOHEP5wYxHHrz824v8_GzlOpCMPe6yDqJM
 ];
 
 const assets = {
+  "/index.mjs": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"11c98-7Y3QIyOREpZ+Gdl9SLXaz9MpdL4\"",
+    "mtime": "2026-06-20T12:34:25.273Z",
+    "size": 72856,
+    "path": "index.mjs"
+  },
   "/index.mjs.map": {
     "type": "application/json",
     "etag": "\"44a25-lRD73K4DEH2coztGnqFiebW0vlQ\"",
-    "mtime": "2026-06-20T12:20:34.685Z",
+    "mtime": "2026-06-20T12:34:25.273Z",
     "size": 281125,
     "path": "index.mjs.map"
-  },
-  "/index.mjs": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"11c77-srLfGbtlIYLdJBzL2weYpmR74Ko\"",
-    "mtime": "2026-06-20T12:20:34.685Z",
-    "size": 72823,
-    "path": "index.mjs"
   }
 };
 
@@ -1638,7 +1638,7 @@ function createServerHead(options = {}) {
 
 const unheadPlugins = [];
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"水彩手绘风植物压花标本设计与排版工具"}],"link":[{"rel":"preconnect","href":"https://fonts.googleapis.com"},{"rel":"preconnect","href":"https://fonts.gstatic.com","crossorigin":""},{"rel":"stylesheet","href":"https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap"}],"style":[],"script":[],"noscript":[],"title":"植物压花标本工作室"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"水彩手绘风植物压花标本设计与排版工具"}],"link":[{"rel":"preconnect","href":"https://fonts.googleapis.com"},{"rel":"preconnect","href":"https://fonts.gstatic.com","crossorigin":""},{"rel":"stylesheet","href":"https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap"}],"style":[],"script":[],"noscript":[],"title":"植物压花标本工作室"};
 
 const appRootId = "__nuxt";
 

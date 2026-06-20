@@ -6,7 +6,7 @@ import { useMaterialStore } from '~/stores/material'
 import { useEditorStore } from '~/stores/editor'
 import type { PlantMaterial } from '~/types'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Palette, Tag, Sparkles, Scissors } from 'lucide-vue-next'
+import { ArrowLeft, Palette, Tag, Sparkles, Scissors, Type } from 'lucide-vue-next'
 import { removeBackground, imageFileToCanvas } from '~/utils/imageProcess'
 import type { ColorAdjustment } from '~/types'
 
@@ -19,6 +19,11 @@ const editorStore = useEditorStore()
 const fabricCanvasRef = ref()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const activeTab = ref<'materials' | 'labels' | 'filters' | 'bgremoval'>('materials')
+
+const selectedTextObject = computed(() => {
+  if (!selectedObject.value || selectedObject.value.type !== 'text') return null
+  return selectedObject.value
+})
 
 const project = computed(() => projectStore.getCurrentProject)
 
@@ -81,6 +86,14 @@ function handleBack() {
 
 function handleDeleteSelected() {
   fabricCanvasRef.value?.removeSelected()
+}
+
+function handleAddText() {
+  fabricCanvasRef.value?.addTextObject()
+}
+
+function handleUpdateText(props: Record<string, any>) {
+  fabricCanvasRef.value?.updateTextObject(props)
 }
 
 function handleUpdateOpacity(val: number) {
@@ -160,6 +173,7 @@ watch(project, (newProject) => {
         @export="handleExport"
         @delete-selected="handleDeleteSelected"
         @upload-photo="handleUploadPhoto"
+        @add-text="handleAddText"
       />
     </div>
 
@@ -249,6 +263,10 @@ watch(project, (newProject) => {
 
       <div class="w-72 flex flex-col gap-3 min-h-0">
         <LayerPanel />
+
+        <TextPropertyPanel
+          @update-text="handleUpdateText"
+        />
 
         <div class="flex-1" />
 
