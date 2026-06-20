@@ -21,6 +21,7 @@ let canvas: any = null
 let fabric: any = null
 let resizeObserver: ResizeObserver | null = null
 let filterApplyTimeout: ReturnType<typeof setTimeout> | null = null
+let isSyncingFromStore = false
 
 async function waitForFabric(maxAttempts = 100, intervalMs = 50): Promise<any> {
   for (let i = 0; i < maxAttempts; i++) {
@@ -66,6 +67,7 @@ async function initCanvas() {
     })
 
     canvas.on('object:selected', (e: any) => {
+      if (isSyncingFromStore) return
       const obj = e.target
       if (obj && obj.id) {
         editorStore.selectObject(obj.id)
@@ -74,6 +76,7 @@ async function initCanvas() {
     })
 
     canvas.on('object:modified', (e: any) => {
+      if (isSyncingFromStore) return
       const obj = e.target
       if (obj && obj.id) {
         editorStore.updateCanvasObject(obj.id, {
@@ -89,6 +92,7 @@ async function initCanvas() {
     })
 
     canvas.on('object:removed', (e: any) => {
+      if (isSyncingFromStore) return
       const obj = e.target
       if (obj && obj.id) {
         editorStore.removeCanvasObject(obj.id)
@@ -296,6 +300,86 @@ function updateSelectedObject(props: any) {
   }
 }
 
+async function loadCanvasFromStore() {
+  if (!canvas || !fabric) return
+  if (isSyncingFromStore) return
+
+  isSyncingFromStore = true
+  try {
+    const objects = canvas.getObjects()
+    const storeObjects = editorStore.canvasObjects
+
+    const canvasIds = new Set(objects.map((o: any) => o.id))
+    const storeIds = new Set(storeObjects.map(o => o.id))
+
+    if (canvasIds.size === storeIds.size &&
+        [...canvasIds].every(id => storeIds.has(id))) {
+      return
+    }
+
+    canvas.clear()
+    canvas.setBackgroundColor('#FAFAF5', () => {})
+
+    for (const objData of storeObjects) {
+      try {
+        if (objData.type === 'material' && objData.svgData) {
+          const group = await new Promise<any>((resolve) => {
+            fabric.loadSVGFromString(objData.svgData, (objs: any[], opts: any) => {
+              resolve(fabric.util.groupSVGElements(objs, opts))
+            })
+          })
+          if (group) {
+            group.set({
+              left: objData.x,
+              top: objData.y,
+              scaleX: objData.scaleX,
+              scaleY: objData.scaleY,
+              angle: objData.angle,
+              opacity: objData.opacity,
+              originX: 'center',
+              originY: 'center',
+              id: objData.id
+            })
+            canvas.add(group)
+          }
+        } else if (objData.type === 'uploaded' && objData.imageData) {
+          const img = await new Promise<any>((resolve) => {
+            fabric.Image.fromURL(objData.imageData, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
+          })
+          if (img) {
+            img.set({
+              left: objData.x,
+              top: objData.y,
+              scaleX: objData.scaleX,
+              scaleY: objData.scaleY,
+              angle: objData.angle,
+              opacity: objData.opacity,
+              originX: 'center',
+              originY: 'center',
+              id: objData.id
+            })
+            canvas.add(img)
+          }
+        }
+      } catch (e) {
+        console.error('[FabricCanvas] Error restoring object:', objData.id, e)
+      }
+    }
+
+    canvas.renderAll()
+
+    if (editorStore.selectedObjectId) {
+      const activeObj = canvas.getObjects().find((o: any) => o.id === editorStore.selectedObjectId)
+      if (activeObj) {
+        canvas.setActiveObject(activeObj)
+        canvas.renderAll()
+      }
+    }
+  } finally {
+    isSyncingFromStore = false
+  }
+}
+
 async function applyFilters() {
   if (!canvas || !fabric) return
   
@@ -348,8 +432,10 @@ onBeforeUnmount(() => {
 watch(
   () => editorStore.canvasObjects,
   () => {
-  },
-  { deep: true }
+    if (canvas && fabric) {
+      loadCanvasFromStore()
+    }
+  }
 )
 
 watch(

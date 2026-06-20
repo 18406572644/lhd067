@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
 import type { ExportSettings } from '~/types'
 import { useEditorStore } from '~/stores/editor'
 import { Download } from 'lucide-vue-next'
@@ -10,13 +9,8 @@ const emit = defineEmits<{
 
 const editorStore = useEditorStore()
 
-const settings = reactive<ExportSettings>({
-  ...editorStore.exportSettings
-})
-
 function handleExport() {
-  editorStore.setExportSettings(settings)
-  emit('export', settings)
+  emit('export', editorStore.exportSettings)
 }
 </script>
 
@@ -29,7 +23,7 @@ function handleExport() {
     <div class="space-y-5">
       <div>
         <label class="block font-serif text-sm text-herb-brown mb-2">格式</label>
-        <el-radio-group v-model="settings.format" class="w-full">
+        <el-radio-group :model-value="editorStore.exportSettings.format" class="w-full" @update:model-value="(v: any) => editorStore.setExportSettings({ format: v })">
           <el-radio value="png" class="w-full">
             <span class="font-serif text-sm">PNG (透明背景)</span>
           </el-radio>
@@ -41,7 +35,7 @@ function handleExport() {
 
       <div>
         <label class="block font-serif text-sm text-herb-brown mb-2">分辨率</label>
-        <el-select v-model="settings.dpi" class="w-full">
+        <el-select :model-value="editorStore.exportSettings.dpi" class="w-full" @update:model-value="(v: any) => editorStore.setExportSettings({ dpi: v })">
           <el-option :value="150" label="150 DPI (快速预览)" />
           <el-option :value="300" label="300 DPI (标准打印)" />
           <el-option :value="600" label="600 DPI (高清打印)" />
@@ -50,12 +44,19 @@ function handleExport() {
 
       <div class="flex items-center justify-between">
         <label class="font-serif text-sm text-herb-brown">显示边框</label>
-        <el-switch v-model="settings.showBorder" />
+        <el-switch
+          :model-value="editorStore.exportSettings.showBorder"
+          @update:model-value="(v: any) => editorStore.setExportSettings({ showBorder: v })"
+        />
       </div>
 
-      <div v-if="settings.showBorder">
+      <div v-if="editorStore.exportSettings.showBorder">
         <label class="block font-serif text-sm text-herb-brown mb-2">边框样式</label>
-        <el-select v-model="settings.borderStyle" class="w-full">
+        <el-select
+          :model-value="editorStore.exportSettings.borderStyle"
+          class="w-full"
+          @update:model-value="(v: any) => editorStore.setExportSettings({ borderStyle: v })"
+        >
           <el-option value="none" label="无" />
           <el-option value="simple" label="简单" />
           <el-option value="botanical" label="植物装饰边框" />
