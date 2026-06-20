@@ -37,7 +37,7 @@ function onIntensityChange(filter: FilterConfig, val: number) {
 </script>
 
 <template>
-  <div class="w-72 bg-white/60 backdrop-blur rounded-2xl border border-herb-brown-light/30 p-4">
+  <div class="w-72 max-h-[80vh] overflow-y-auto bg-white/60 backdrop-blur rounded-2xl border border-herb-brown-light/30 p-4">
     <h2 class="font-display text-herb-brown text-lg mb-4">水彩滤镜</h2>
     
     <div v-if="!hasSelectedObject" class="text-center py-6 text-herb-brown/50 text-sm">

@@ -380,7 +380,10 @@ async function loadCanvasFromStore() {
   }
 }
 
+let isApplyingFilters = false
+
 async function applyFilters() {
+  console.log('[FabricCanvas V2] applyFilters triggered, filters:', JSON.stringify(editorStore.filters.map((f:any)=>`${f.type}:${f.enabled}`)))
   if (!canvas || !fabric) return
   
   if (filterApplyTimeout) {
@@ -388,12 +391,26 @@ async function applyFilters() {
   }
   
   filterApplyTimeout = setTimeout(async () => {
+    console.log('[FabricCanvas V2] applyFilters debounce fired')
+    isApplyingFilters = true
+    isSyncingFromStore = true
     try {
+      const activeObj = canvas.getActiveObject()
+      console.log('[FabricCanvas V2] Active object before apply:', activeObj ? `${activeObj.type} ${activeObj.id}` : 'NONE')
       await applyFiltersToSelected(fabric, canvas, editorStore.filters, (newId) => {
+        console.log('[FabricCanvas V2] Object replaced callback, newId:', newId)
         editorStore.selectObject(newId)
       })
+      const afterObj = canvas.getActiveObject()
+      console.log('[FabricCanvas V2] Active object after apply:', afterObj ? `${afterObj.type} ${afterObj.id}` : 'NONE')
+      console.log('[FabricCanvas V2] Total objects on canvas:', canvas.getObjects().length)
     } catch (e) {
       console.error('[FabricCanvas] Error applying filters:', e)
+    } finally {
+      setTimeout(() => {
+        isApplyingFilters = false
+        isSyncingFromStore = false
+      }, 100)
     }
   }, 50)
 }

@@ -1,5 +1,40 @@
 import type { FilterConfig } from '~/types'
 
+console.log('[filterEffects.ts v2] LOADED - CACHE FIXED 2026-06-20')
+
+let _isApplyingFilters = false
+let _pendingApplyArgs: any[] | null = null
+
+async function _runApplyWithLock(args: any[]): Promise<void> {
+  const [fabric, canvas, filters, onObjectReplaced] = args
+  try {
+    await _applyFiltersToSelectedImpl(fabric, canvas, filters, onObjectReplaced)
+  } finally {
+    _isApplyingFilters = false
+    if (_pendingApplyArgs) {
+      const nextArgs = _pendingApplyArgs
+      _pendingApplyArgs = null
+      _isApplyingFilters = true
+      _runApplyWithLock(nextArgs)
+    }
+  }
+}
+
+export async function applyFiltersToSelected(
+  fabric: any,
+  canvas: any,
+  filters: FilterConfig[],
+  onObjectReplaced?: (newId: string) => void
+): Promise<void> {
+  if (_isApplyingFilters) {
+    console.log('[filterEffects V2] SKIP: filter apply in progress, queuing latest call')
+    _pendingApplyArgs = [fabric, canvas, filters, onObjectReplaced]
+    return
+  }
+  _isApplyingFilters = true
+  await _runApplyWithLock([fabric, canvas, filters, onObjectReplaced])
+}
+
 const WATERCOLOR_KERNEL = [
   0.0625, 0.125, 0.0625,
   0.125,  0.25,  0.125,
@@ -301,16 +336,36 @@ export async function convertGroupToImage(fabric: any, canvas: any, group: any):
   return new Promise((resolve) => {
     const originalLeft = group.left
     const originalTop = group.top
-    const originalScaleX = group.scaleX
-    const originalScaleY = group.scaleY
+    const originalScaleX = group.scaleX || 1
+    const originalScaleY = group.scaleY || 1
     const originalAngle = group.angle
     const originalOriginX = group.originX || 'center'
     const originalOriginY = group.originY || 'center'
+    console.log('[convertGroupToImage V2] group.width:', group.width, 'group.height:', group.height, 'scale:', originalScaleX, 'x', originalScaleY)
     
     const bounds = group.getBoundingRect()
+    let canvasWidth = Math.ceil(bounds.width)
+    let canvasHeight = Math.ceil(bounds.height)
+    console.log('[convertGroupToImage V2] bounds:', bounds.width, 'x', bounds.height)
+    
+    if (canvasWidth < 50 || canvasHeight < 50) {
+      const gWidth = (group.width || 0) * Math.abs(originalScaleX)
+      const gHeight = (group.height || 0) * Math.abs(originalScaleY)
+      console.log('[convertGroupToImage V2] bounds too small, trying group.width*scale:', gWidth, 'x', gHeight)
+      if (gWidth > 50 && gHeight > 50) {
+        canvasWidth = Math.ceil(gWidth)
+        canvasHeight = Math.ceil(gHeight)
+      } else {
+        canvasWidth = Math.max(canvasWidth, 200)
+        canvasHeight = Math.max(canvasHeight, 200)
+        console.log('[convertGroupToImage V2] Using fallback size:', canvasWidth, 'x', canvasHeight)
+      }
+    }
+    console.log('[convertGroupToImage V2] Final canvas size:', canvasWidth, 'x', canvasHeight)
+    
     const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = Math.ceil(bounds.width)
-    tempCanvas.height = Math.ceil(bounds.height)
+    tempCanvas.width = canvasWidth
+    tempCanvas.height = canvasHeight
     
     const allObjects = canvas.getObjects()
     const otherObjects = allObjects.filter((o: any) => o !== group)
@@ -347,6 +402,7 @@ export async function convertGroupToImage(fabric: any, canvas: any, group: any):
     canvas.renderAll()
     
     const dataUrl = tempCanvas.toDataURL('image/png')
+    console.log('[convertGroupToImage V2] dataUrl length:', dataUrl.length)
     
     fabric.Image.fromURL(dataUrl, (img: any) => {
       img.set({
@@ -361,10 +417,15 @@ export async function convertGroupToImage(fabric: any, canvas: any, group: any):
         filters: []
       })
       
+      img._originalWidth = tempCanvas.width
+      img._originalHeight = tempCanvas.height
+      console.log('[convertGroupToImage V2] img created, _originalWidth/_originalHeight set to:', img._originalWidth, 'x', img._originalHeight)
+      
       canvas.remove(group)
       canvas.add(img)
       canvas.setActiveObject(img)
       canvas.renderAll()
+      console.log('[convertGroupToImage V2] img added to canvas, objects:', canvas.getObjects().length)
       
       resolve(img)
     }, { crossOrigin: 'anonymous' })
@@ -623,32 +684,40 @@ function processVintageDirect(pixels: ImageData, intensity: number) {
   }
 }
 
-export async function applyFiltersToSelected(
+async function _applyFiltersToSelectedImpl(
   fabric: any,
   canvas: any,
   filters: FilterConfig[],
   onObjectReplaced?: (newId: string) => void
 ): Promise<void> {
+  console.log('[filterEffects V2] applyFiltersToSelected CALLED')
   if (!canvas || !fabric) {
+    console.log('[filterEffects V2] EXIT: no canvas or fabric')
     return
   }
   
   const activeObject = canvas.getActiveObject()
   if (!activeObject) {
+    console.log('[filterEffects V2] EXIT: no active object')
     return
   }
+  console.log('[filterEffects V2] Active object:', activeObject.type, activeObject.id)
   
   const originalType = activeObject.type
   const originalId = activeObject.id
   const imageObj = await ensureImageObject(fabric, canvas, activeObject)
   if (!imageObj) {
+    console.log('[filterEffects V2] EXIT: ensureImageObject returned null')
     return
   }
+  console.log('[filterEffects V2] Image object ensured:', imageObj.type, imageObj.id)
+  console.log('[filterEffects V2] _originalWidth/_originalHeight:', imageObj._originalWidth, 'x', imageObj._originalHeight)
   
   const wasConverted = (originalType === 'group' || originalType instanceof fabric.Group) && 
                        (imageObj.type === 'image' || imageObj instanceof fabric.Image)
   
   if ((imageObj.id !== originalId || wasConverted) && onObjectReplaced) {
+    console.log('[filterEffects V2] Object converted, calling onObjectReplaced:', imageObj.id)
     onObjectReplaced(imageObj.id)
   }
   
@@ -657,32 +726,101 @@ export async function applyFiltersToSelected(
     return
   }
   
-  const originalElement = imageObj.getElement()
-  if (!originalElement) {
+  if (!imageObj._originalElement) {
+    imageObj._originalElement = imageObj.getElement()
+    console.log('[filterEffects V2] Saved _originalElement for first time:', imageObj._originalElement.tagName)
+  }
+  const sourceElement = imageObj._originalElement
+  if (!sourceElement) {
+    console.log('[filterEffects V2] EXIT: sourceElement is null')
     return
   }
+  console.log('[filterEffects V2] sourceElement:', sourceElement.tagName, 'natural:', sourceElement.naturalWidth, 'x', sourceElement.naturalHeight, 'elWidth:', sourceElement.width, 'x', sourceElement.height)
   
-  const width = originalElement.naturalWidth || originalElement.width
-  const height = originalElement.naturalHeight || originalElement.height
+  const width = imageObj._originalWidth || sourceElement.naturalWidth || sourceElement.width
+  const height = imageObj._originalHeight || sourceElement.naturalHeight || sourceElement.height
   if (!width || !height) {
+    console.log('[filterEffects V2] EXIT: invalid dimensions', width, 'x', height)
     return
   }
+  console.log('[filterEffects V2] Using dimensions:', width, 'x', height)
   
   const processCanvas = document.createElement('canvas')
   processCanvas.width = width
   processCanvas.height = height
   const processCtx = processCanvas.getContext('2d')!
-  processCtx.drawImage(originalElement, 0, 0, width, height)
+  processCtx.drawImage(sourceElement, 0, 0, width, height)
   
   const activeFilters = filters.filter(f => f.enabled)
-  if (activeFilters.length > 0) {
-    applyFilterProcessors(processCtx, width, height, activeFilters)
+  console.log('[filterEffects V2] Active filters count:', activeFilters.length)
+  
+  if (activeFilters.length === 0) {
+    console.log('[filterEffects V2] FAST RESTORE PATH: no active filters, restoring original')
+    const origW = imageObj._originalWidth || width
+    const origH = imageObj._originalHeight || height
+    console.log('[filterEffects V2] Restore dimensions:', origW, 'x', origH)
+    
+    const restoreCanvas = document.createElement('canvas')
+    restoreCanvas.width = origW
+    restoreCanvas.height = origH
+    const restoreCtx = restoreCanvas.getContext('2d')!
+    
+    try {
+      restoreCtx.drawImage(sourceElement, 0, 0, origW, origH)
+      console.log('[filterEffects V2] drawImage OK')
+    } catch (e: any) {
+      console.log('[filterEffects V2] drawImage error, using fallback:', e.message)
+      const sw = sourceElement.naturalWidth || sourceElement.width || origW
+      const sh = sourceElement.naturalHeight || sourceElement.height || origH
+      restoreCtx.drawImage(sourceElement, 0, 0, sw, sh, 0, 0, origW, origH)
+    }
+    
+    const restoreDataUrl = restoreCanvas.toDataURL('image/png')
+    console.log('[filterEffects V2] Restore dataUrl length:', restoreDataUrl.length)
+    
+    await new Promise<void>((resolve) => {
+      fabric.Image.fromURL(restoreDataUrl, (restoredImg: any) => {
+        console.log('[filterEffects V2] Restored image loaded, adding to canvas')
+        restoredImg.set({
+          left: imageObj.left,
+          top: imageObj.top,
+          scaleX: imageObj.scaleX,
+          scaleY: imageObj.scaleY,
+          angle: imageObj.angle,
+          originX: imageObj.originX || 'center',
+          originY: imageObj.originY || 'center',
+          opacity: imageObj.opacity,
+          id: imageObj.id
+        })
+        
+        restoredImg._originalElement = imageObj._originalElement
+        restoredImg._originalWidth = imageObj._originalWidth || origW
+        restoredImg._originalHeight = imageObj._originalHeight || origH
+        
+        console.log('[filterEffects V2] Removing old image, adding restored image, total objects before:', canvas.getObjects().length)
+        canvas.remove(imageObj)
+        console.log('[filterEffects V2] After remove, objects:', canvas.getObjects().length)
+        canvas.add(restoredImg)
+        console.log('[filterEffects V2] After add, objects:', canvas.getObjects().length)
+        canvas.setActiveObject(restoredImg)
+        canvas.renderAll()
+        
+        resolve()
+      }, { crossOrigin: 'anonymous' })
+    })
+    console.log('[filterEffects V2] FAST RESTORE COMPLETE')
+    return
   }
   
+  console.log('[filterEffects V2] FILTER APPLY PATH: processing', activeFilters.length, 'filters')
+  applyFilterProcessors(processCtx, width, height, activeFilters)
+  
   const newDataUrl = processCanvas.toDataURL('image/png')
+  console.log('[filterEffects V2] Filtered dataUrl length:', newDataUrl.length)
   
   await new Promise<void>((resolve) => {
     fabric.Image.fromURL(newDataUrl, (newImg: any) => {
+      console.log('[filterEffects V2] Filtered image loaded, adding to canvas')
       newImg.set({
         left: imageObj.left,
         top: imageObj.top,
@@ -695,18 +833,23 @@ export async function applyFiltersToSelected(
         id: imageObj.id
       })
       
+      newImg._originalElement = imageObj._originalElement
+      newImg._originalWidth = imageObj._originalWidth || width
+      newImg._originalHeight = imageObj._originalHeight || height
+      console.log('[filterEffects V2] newImg inherited _originalWidth/_originalHeight:', newImg._originalWidth, 'x', newImg._originalHeight)
+      
+      console.log('[filterEffects V2] Removing old, adding new, objects before:', canvas.getObjects().length)
       canvas.remove(imageObj)
+      console.log('[filterEffects V2] After remove:', canvas.getObjects().length)
       canvas.add(newImg)
+      console.log('[filterEffects V2] After add:', canvas.getObjects().length)
       canvas.setActiveObject(newImg)
       canvas.renderAll()
-      
-      if (onObjectReplaced) {
-        onObjectReplaced(newImg.id)
-      }
       
       resolve()
     }, { crossOrigin: 'anonymous' })
   })
+  console.log('[filterEffects V2] FILTER APPLY COMPLETE')
 }
 
 export async function applyFiltersToAllImages(
@@ -724,22 +867,80 @@ export async function applyFiltersToAllImages(
     
     if (!obj.getElement || !obj.setElement) continue
     
-    const originalElement = obj.getElement()
-    if (!originalElement) continue
+    if (!obj._originalElement) {
+      obj._originalElement = obj.getElement()
+    }
+    const sourceElement = obj._originalElement
+    if (!sourceElement) continue
     
-    const width = originalElement.naturalWidth || originalElement.width
-    const height = originalElement.naturalHeight || originalElement.height
+    const width = obj._originalWidth || sourceElement.naturalWidth || sourceElement.width
+    const height = obj._originalHeight || sourceElement.naturalHeight || sourceElement.height
     if (!width || !height) continue
     
     const processCanvas = document.createElement('canvas')
     processCanvas.width = width
     processCanvas.height = height
     const processCtx = processCanvas.getContext('2d')!
-    processCtx.drawImage(originalElement, 0, 0, width, height)
+    processCtx.drawImage(sourceElement, 0, 0, width, height)
     
-    if (activeFilters.length > 0) {
-      applyFilterProcessors(processCtx, width, height, activeFilters)
+    if (activeFilters.length === 0) {
+      const origW = obj._originalWidth || width
+      const origH = obj._originalHeight || height
+      
+      const restoreCanvas = document.createElement('canvas')
+      restoreCanvas.width = origW
+      restoreCanvas.height = origH
+      const restoreCtx = restoreCanvas.getContext('2d')!
+      
+      try {
+        restoreCtx.drawImage(sourceElement, 0, 0, origW, origH)
+      } catch (e) {
+        const sw = sourceElement.naturalWidth || sourceElement.width || origW
+        const sh = sourceElement.naturalHeight || sourceElement.height || origH
+        restoreCtx.drawImage(sourceElement, 0, 0, sw, sh, 0, 0, origW, origH)
+      }
+      
+      const restoreDataUrl = restoreCanvas.toDataURL('image/png')
+      const originalLeft = obj.left
+      const originalTop = obj.top
+      const originalScaleX = obj.scaleX
+      const originalScaleY = obj.scaleY
+      const originalAngle = obj.angle
+      const originalOriginX = obj.originX || 'center'
+      const originalOriginY = obj.originY || 'center'
+      const originalOpacity = obj.opacity
+      const originalId = obj.id
+      const origElementRef = obj._originalElement
+      const origWidthRef = obj._originalWidth || width
+      const origHeightRef = obj._originalHeight || height
+      
+      await new Promise<void>((resolve) => {
+        fabric.Image.fromURL(restoreDataUrl, (restoredImg: any) => {
+          restoredImg.set({
+            left: originalLeft,
+            top: originalTop,
+            scaleX: originalScaleX,
+            scaleY: originalScaleY,
+            angle: originalAngle,
+            originX: originalOriginX,
+            originY: originalOriginY,
+            opacity: originalOpacity,
+            id: originalId
+          })
+          
+          restoredImg._originalElement = origElementRef
+          restoredImg._originalWidth = origWidthRef
+          restoredImg._originalHeight = origHeightRef
+          
+          canvas.remove(obj)
+          canvas.add(restoredImg)
+          resolve()
+        }, { crossOrigin: 'anonymous' })
+      })
+      continue
     }
+    
+    applyFilterProcessors(processCtx, width, height, activeFilters)
     
     const newDataUrl = processCanvas.toDataURL('image/png')
     const originalLeft = obj.left
@@ -751,6 +952,9 @@ export async function applyFiltersToAllImages(
     const originalOriginY = obj.originY || 'center'
     const originalOpacity = obj.opacity
     const originalId = obj.id
+    const origElementRef = obj._originalElement
+    const origWidthRef = obj._originalWidth || width
+    const origHeightRef = obj._originalHeight || height
     
     await new Promise<void>((resolve) => {
       fabric.Image.fromURL(newDataUrl, (newImg: any) => {
@@ -765,6 +969,10 @@ export async function applyFiltersToAllImages(
           opacity: originalOpacity,
           id: originalId
         })
+        
+        newImg._originalElement = origElementRef
+        newImg._originalWidth = origWidthRef
+        newImg._originalHeight = origHeightRef
         
         canvas.remove(obj)
         canvas.add(newImg)
