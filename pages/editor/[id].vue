@@ -20,6 +20,8 @@ const fabricCanvasRef = ref()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const activeTab = ref<'materials' | 'labels' | 'filters' | 'bgremoval'>('materials')
 
+provide('fabricCanvasRef', fabricCanvasRef)
+
 const selectedTextObject = computed(() => {
   if (!selectedObject.value || selectedObject.value.type !== 'text') return null
   return selectedObject.value
@@ -86,6 +88,14 @@ function handleBack() {
 
 function handleDeleteSelected() {
   fabricCanvasRef.value?.removeSelected()
+}
+
+function handleGroup() {
+  fabricCanvasRef.value?.groupSelectedObjects()
+}
+
+function handleUngroup() {
+  fabricCanvasRef.value?.ungroupSelectedObject()
 }
 
 function handleAddText() {
@@ -174,6 +184,8 @@ watch(project, (newProject) => {
         @delete-selected="handleDeleteSelected"
         @upload-photo="handleUploadPhoto"
         @add-text="handleAddText"
+        @group="handleGroup"
+        @ungroup="handleUngroup"
       />
     </div>
 

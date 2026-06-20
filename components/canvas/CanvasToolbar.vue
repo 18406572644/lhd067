@@ -13,7 +13,9 @@ import {
   Maximize,
   Save,
   Download,
-  Magnet
+  Magnet,
+  Group,
+  Ungroup
 } from 'lucide-vue-next'
 
 const emit = defineEmits<{
@@ -28,14 +30,22 @@ const emit = defineEmits<{
   'delete-selected': []
   'save': []
   'export': []
+  'group': []
+  'ungroup': []
 }>()
 
 const editorStore = useEditorStore()
 const projectStore = useProjectStore()
 const router = useRouter()
 
-const hasSelection = computed(() => !!editorStore.selectedObjectId)
+const hasSelection = computed(() => !!editorStore.selectedObjectId || editorStore.selectedObjectIds.length > 0)
 const snapEnabled = computed(() => editorStore.snapAlignmentEnabled)
+const canGroup = computed(() => editorStore.selectedObjectIds.length >= 2)
+const canUngroup = computed(() => {
+  if (editorStore.selectedObjectIds.length !== 1) return false
+  const obj = editorStore.canvasObjects.find(o => o.id === editorStore.selectedObjectIds[0])
+  return obj?.isGroup === true
+})
 
 function handleToggleSnap() {
   editorStore.toggleSnapAlignment()
@@ -109,6 +119,30 @@ function handleExport() {
         @click="emit('delete-selected')"
       >
         <Trash2 :size="18" />
+      </button>
+    </el-tooltip>
+
+    <div class="w-px h-6 bg-herb-brown-light/30 mx-1" />
+
+    <el-tooltip content="组合对象" placement="bottom">
+      <button
+        class="rounded-lg p-2 transition-all"
+        :class="canGroup ? 'hover:bg-herb-green/20 text-herb-brown' : 'text-herb-brown/30 cursor-not-allowed'"
+        :disabled="!canGroup"
+        @click="emit('group')"
+      >
+        <Group :size="18" />
+      </button>
+    </el-tooltip>
+
+    <el-tooltip content="取消组合" placement="bottom">
+      <button
+        class="rounded-lg p-2 transition-all"
+        :class="canUngroup ? 'hover:bg-herb-green/20 text-herb-brown' : 'text-herb-brown/30 cursor-not-allowed'"
+        :disabled="!canUngroup"
+        @click="emit('ungroup')"
+      >
+        <Ungroup :size="18" />
       </button>
     </el-tooltip>
 

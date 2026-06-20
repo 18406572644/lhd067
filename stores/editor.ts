@@ -5,6 +5,7 @@ import { useProjectStore } from './project'
 export const useEditorStore = defineStore('editor', {
   state: () => ({
     selectedObjectId: null as string | null,
+    selectedObjectIds: [] as string[],
     canvasObjects: [] as CanvasObjectData[],
     labels: [] as SpecimenLabel[],
     filters: [
@@ -68,6 +69,39 @@ export const useEditorStore = defineStore('editor', {
 
     selectObject(id: string | null) {
       this.selectedObjectId = id
+      if (id) {
+        this.selectedObjectIds = [id]
+      } else {
+        this.selectedObjectIds = []
+      }
+    },
+
+    selectObjects(ids: string[]) {
+      this.selectedObjectIds = [...ids]
+      if (ids.length === 1) {
+        this.selectedObjectId = ids[0]
+      } else if (ids.length > 1) {
+        this.selectedObjectId = null
+      } else {
+        this.selectedObjectId = null
+      }
+    },
+
+    toggleObjectSelection(id: string) {
+      const idx = this.selectedObjectIds.indexOf(id)
+      if (idx >= 0) {
+        this.selectedObjectIds.splice(idx, 1)
+      } else {
+        const obj = this.canvasObjects.find(o => o.id === id)
+        if (obj && !obj.locked) {
+          this.selectedObjectIds.push(id)
+        }
+      }
+      if (this.selectedObjectIds.length === 1) {
+        this.selectedObjectId = this.selectedObjectIds[0]
+      } else {
+        this.selectedObjectId = null
+      }
     },
 
     addLabel(label: SpecimenLabel) {
@@ -100,6 +134,56 @@ export const useEditorStore = defineStore('editor', {
       this.snapAlignmentEnabled = !this.snapAlignmentEnabled
     },
 
+    toggleObjectLock(id: string) {
+      const obj = this.canvasObjects.find(o => o.id === id)
+      if (obj) {
+        obj.locked = !obj.locked
+        if (obj.locked && this.selectedObjectIds.includes(id)) {
+          this.selectedObjectIds = this.selectedObjectIds.filter(i => i !== id)
+          if (this.selectedObjectId === id) {
+            this.selectedObjectId = this.selectedObjectIds.length === 1 ? this.selectedObjectIds[0] : null
+          }
+        }
+        this.isDirty = true
+      }
+    },
+
+    renameObject(id: string, name: string) {
+      const obj = this.canvasObjects.find(o => o.id === id)
+      if (obj) {
+        obj.name = name
+        this.isDirty = true
+      }
+    },
+
+    updateObjectThumbnail(id: string, thumbnail: string) {
+      const obj = this.canvasObjects.find(o => o.id === id)
+      if (obj) {
+        obj.thumbnail = thumbnail
+      }
+    },
+
+    groupObjects(groupData: CanvasObjectData) {
+      const childIds = groupData.groupChildIds || []
+      this.canvasObjects = this.canvasObjects.filter(o => !childIds.includes(o.id))
+      this.canvasObjects.push(groupData)
+      this.selectedObjectIds = [groupData.id]
+      this.selectedObjectId = groupData.id
+      this.isDirty = true
+    },
+
+    ungroupObjects(groupId: string, childObjects: CanvasObjectData[]) {
+      const groupIdx = this.canvasObjects.findIndex(o => o.id === groupId)
+      if (groupIdx < 0) return
+      this.canvasObjects.splice(groupIdx, 1)
+      childObjects.forEach(child => {
+        this.canvasObjects.push(child)
+      })
+      this.selectedObjectIds = childObjects.map(c => c.id)
+      this.selectedObjectId = null
+      this.isDirty = true
+    },
+
     updateFilterIntensity(id: string, intensity: number) {
       const filter = this.filters.find(f => f.id === id)
       if (filter) {
@@ -114,6 +198,7 @@ export const useEditorStore = defineStore('editor', {
 
     resetEditor() {
       this.selectedObjectId = null
+      this.selectedObjectIds = []
       this.canvasObjects = []
       this.labels = []
       this.filters = [
@@ -291,6 +376,7 @@ export const useEditorStore = defineStore('editor', {
         this.globalAppliedPaletteId = null
       }
       this.selectedObjectId = null
+      this.selectedObjectIds = []
       this.isDirty = false
     },
 

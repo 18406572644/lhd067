@@ -1046,23 +1046,6 @@ async function errorHandler(error, event) {
   // H3 will handle fallback
 }
 
-const script = `
-if (!window.__NUXT_DEVTOOLS_TIME_METRIC__) {
-  Object.defineProperty(window, '__NUXT_DEVTOOLS_TIME_METRIC__', {
-    value: {},
-    enumerable: false,
-    configurable: true,
-  })
-}
-window.__NUXT_DEVTOOLS_TIME_METRIC__.appInit = Date.now()
-`;
-
-const _jUVnO4Vd5tyVZopbbLLsWpdnIITzmW4OuahVaAxBPAw = (function(nitro) {
-  nitro.hooks.hook("render:html", (htmlContext) => {
-    htmlContext.head.push(`<script>${script}<\/script>`);
-  });
-});
-
 const rootDir = "D:/lhd067";
 
 const asyncContext = getContext("nuxt-dev", { asyncContext: true, AsyncLocalStorage });
@@ -1132,22 +1115,21 @@ function onConsoleLog(callback) {
 }
 
 const plugins = [
-  _jUVnO4Vd5tyVZopbbLLsWpdnIITzmW4OuahVaAxBPAw,
-_Z3oG9jzZoIOHEP5wYxHHrz824v8_GzlOpCMPe6yDqJM
+  _Z3oG9jzZoIOHEP5wYxHHrz824v8_GzlOpCMPe6yDqJM
 ];
 
 const assets = {
   "/index.mjs": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"11c98-LljFfG16vsKUART6UkqSpR+sq38\"",
-    "mtime": "2026-06-20T13:17:18.199Z",
-    "size": 72856,
+    "etag": "\"11a77-bvNtPYDSa3vyAJGus151Mv90pPo\"",
+    "mtime": "2026-06-20T13:41:27.034Z",
+    "size": 72311,
     "path": "index.mjs"
   },
   "/index.mjs.map": {
     "type": "application/json",
     "etag": "\"44a25-lRD73K4DEH2coztGnqFiebW0vlQ\"",
-    "mtime": "2026-06-20T13:17:18.199Z",
+    "mtime": "2026-06-20T13:17:24.869Z",
     "size": 281125,
     "path": "index.mjs.map"
   }
@@ -1638,7 +1620,7 @@ function createServerHead(options = {}) {
 
 const unheadPlugins = [];
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"水彩手绘风植物压花标本设计与排版工具"}],"link":[{"rel":"preconnect","href":"https://fonts.googleapis.com"},{"rel":"preconnect","href":"https://fonts.gstatic.com","crossorigin":""},{"rel":"stylesheet","href":"https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap"}],"style":[],"script":[],"noscript":[],"title":"植物压花标本工作室"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"水彩手绘风植物压花标本设计与排版工具"}],"link":[{"rel":"preconnect","href":"https://fonts.font.im"},{"rel":"preconnect","href":"https://fonts.gstatic.font.im","crossorigin":""},{"rel":"stylesheet","href":"https://fonts.font.im/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap"}],"style":[],"script":[],"noscript":[],"title":"植物压花标本工作室"};
 
 const appRootId = "__nuxt";
 
@@ -2053,4 +2035,3 @@ const _virtual__spaTemplate = /*#__PURE__*/Object.freeze({
   __proto__: null,
   template: template
 });
-//# sourceMappingURL=index.mjs.map

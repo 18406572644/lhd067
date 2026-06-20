@@ -1,7 +1,7 @@
 import type { PlantMaterial, MaterialCategory, DesignProject } from '~/types'
 import { materials, categories } from './materials'
 
-function delay(ms: number = 200): Promise<void> {
+function delay(ms: number = 20): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 

@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   ssr: false,
+  compatibilityDate: '2026-06-20',
   experimental: {
     renderJsonPayloads: false,
     noVueServer: true,
@@ -56,10 +57,18 @@ export default defineNuxtConfig({
       ],
     },
   },
+  devtools: { enabled: false },
+  sourcemap: false,
   vite: {
     optimizeDeps: {
-      include: ['fabric', 'element-plus', 'pinia', 'element-plus/es/locale/lang/zh-cn'],
+      include: [
+        'fabric',
+        'pinia',
+        'element-plus/es/locale/lang/zh-cn',
+        'lucide-vue-next',
+      ],
       esbuildOptions: {
+        target: 'es2020',
         define: {
           'process.env': '{}',
         },
@@ -67,6 +76,20 @@ export default defineNuxtConfig({
     },
     ssr: {
       noExternal: ['fabric'],
+    },
+    build: {
+      target: 'es2020',
+      minify: 'esbuild',
+      cssMinify: true,
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            fabric: ['fabric'],
+            vendor: ['vue', 'vue-router', 'pinia'],
+          }
+        }
+      }
     },
   },
 })

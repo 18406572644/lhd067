@@ -69,7 +69,7 @@ export interface FilterConfig {
 export interface CanvasObjectData {
   id: string
   materialId?: string
-  type: 'material' | 'uploaded' | 'text'
+  type: 'material' | 'uploaded' | 'text' | 'group'
   x: number
   y: number
   scaleX: number
@@ -78,6 +78,11 @@ export interface CanvasObjectData {
   opacity: number
   zIndex: number
   name?: string
+  locked?: boolean
+  isGroup?: boolean
+  groupChildIds?: string[]
+  groupChildren?: CanvasObjectData[]
+  thumbnail?: string
   svgData?: string
   imageData?: string
   text?: string

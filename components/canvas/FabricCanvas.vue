@@ -64,12 +64,20 @@ async function initCanvas() {
     })
 
     canvas.on('object:selected', (e: any) => {
-      if (isSyncingFromStore) return
       const obj = e.target
       if (obj && obj.id) {
-        editorStore.selectObject(obj.id)
         emit('object-selected', obj)
       }
+    })
+
+    canvas.on('selection:created', (e: any) => {
+      if (isSyncingFromStore) return
+      handleSelectionChange(e.selected || [])
+    })
+
+    canvas.on('selection:updated', (e: any) => {
+      if (isSyncingFromStore) return
+      handleSelectionChange(e.selected || [])
     })
 
     canvas.on('object:modified', (e: any) => {
@@ -134,6 +142,9 @@ async function initCanvas() {
 
     canvas.on('selection:cleared', () => {
       scheduleHideGuides()
+      if (!isSyncingFromStore) {
+        editorStore.selectObject(null)
+      }
     })
 
     resizeObserver = new ResizeObserver(() => {
@@ -462,6 +473,7 @@ async function addMaterial(material: PlantMaterial, position?: { x: number; y: n
       name: material.name,
       imageData: matWithImg.imageData
     })
+    updateObjectThumbnail(img.id)
     return
   }
 
@@ -507,6 +519,7 @@ async function addMaterial(material: PlantMaterial, position?: { x: number; y: n
     name: material.name,
     svgData: material.svgData
   })
+  updateObjectThumbnail(group.id)
 }
 
 function addTextObject(options?: {
@@ -574,6 +587,7 @@ function addTextObject(options?: {
     lineHeight: textObj.lineHeight as number,
     charSpacing: textObj.charSpacing as number
   })
+  updateObjectThumbnail(textObj.id)
 }
 
 function updateTextObject(props: Record<string, any>) {
@@ -650,6 +664,7 @@ async function addUploadedImage(dataUrl: string) {
     name: '上传图片',
     imageData: dataUrl
   })
+  updateObjectThumbnail(img.id)
 }
 
 function getCanvasData() {
@@ -726,7 +741,87 @@ async function loadCanvasFromStore() {
 
     for (const objData of storeObjects) {
       try {
-        if (objData.type === 'material' && objData.svgData) {
+        if (objData.type === 'group' && objData.groupChildren && objData.groupChildren.length > 0) {
+          const childObjects: any[] = []
+          for (const childData of objData.groupChildren) {
+            if (childData.type === 'material' && childData.svgData) {
+              const g = await new Promise<any>((resolve) => {
+                fabric.loadSVGFromString(childData.svgData, (objs: any[], opts: any) => {
+                  resolve(fabric.util.groupSVGElements(objs, opts))
+                })
+              })
+              if (g) {
+                g.set({
+                  left: childData.x,
+                  top: childData.y,
+                  scaleX: childData.scaleX,
+                  scaleY: childData.scaleY,
+                  angle: childData.angle,
+                  opacity: childData.opacity,
+                  originX: 'center',
+                  originY: 'center',
+                  id: childData.id
+                })
+                childObjects.push(g)
+              }
+            } else if (childData.type === 'uploaded' && childData.imageData) {
+              const img = await new Promise<any>((resolve) => {
+                fabric.Image.fromURL(childData.imageData, (i: any) => resolve(i), { crossOrigin: 'anonymous' })
+              })
+              if (img) {
+                img.set({
+                  left: childData.x,
+                  top: childData.y,
+                  scaleX: childData.scaleX,
+                  scaleY: childData.scaleY,
+                  angle: childData.angle,
+                  opacity: childData.opacity,
+                  originX: 'center',
+                  originY: 'center',
+                  id: childData.id
+                })
+                childObjects.push(img)
+              }
+            } else if (childData.type === 'text') {
+              const textObj = new fabric.IText(childData.text || '双击编辑文字', {
+                left: childData.x,
+                top: childData.y,
+                originX: 'center',
+                originY: 'center',
+                id: childData.id,
+                fontFamily: childData.fontFamily || 'Noto Sans SC',
+                fontSize: childData.fontSize || 28,
+                fill: childData.fill || '#6B5B4E',
+                fontWeight: childData.fontWeight || 'normal',
+                fontStyle: childData.fontStyle || 'normal',
+                underline: childData.underline || false,
+                textAlign: childData.textAlign || 'left',
+                lineHeight: childData.lineHeight || 1.4,
+                charSpacing: childData.charSpacing || 0,
+                scaleX: childData.scaleX,
+                scaleY: childData.scaleY,
+                angle: childData.angle,
+                opacity: childData.opacity,
+                editable: true
+              })
+              childObjects.push(textObj)
+            }
+          }
+          if (childObjects.length > 0) {
+            const group = new fabric.Group(childObjects, {
+              left: objData.x,
+              top: objData.y,
+              scaleX: objData.scaleX,
+              scaleY: objData.scaleY,
+              angle: objData.angle,
+              opacity: objData.opacity,
+              originX: 'center',
+              originY: 'center',
+              id: objData.id
+            })
+            canvas.add(group)
+          }
+        } else if (objData.type === 'material' && objData.svgData) {
           const group = await new Promise<any>((resolve) => {
             fabric.loadSVGFromString(objData.svgData, (objs: any[], opts: any) => {
               resolve(fabric.util.groupSVGElements(objs, opts))
@@ -795,7 +890,15 @@ async function loadCanvasFromStore() {
 
     canvas.renderAll()
 
-    if (editorStore.selectedObjectId) {
+    storeObjects.forEach(objData => {
+      if (objData.locked) {
+        applyLockState(objData.id, true)
+      }
+    })
+
+    if (editorStore.selectedObjectIds.length > 1) {
+      selectObjectsById(editorStore.selectedObjectIds)
+    } else if (editorStore.selectedObjectId) {
       const activeObj = canvas.getObjects().find((o: any) => o.id === editorStore.selectedObjectId)
       if (activeObj) {
         canvas.setActiveObject(activeObj)
@@ -922,6 +1025,257 @@ async function replaceSelectedImage(dataUrl: string): Promise<{ scaleX: number; 
   }
 }
 
+function generateThumbnail(obj: any): string {
+  if (!canvas || !fabric) return ''
+  try {
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = 40
+    tempCanvas.height = 40
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) return ''
+
+    const bounds = obj.getBoundingRect()
+    const size = Math.max(bounds.width, bounds.height) || 1
+    const scale = 36 / size
+
+    tempCtx.save()
+    tempCtx.translate(20, 20)
+    tempCtx.scale(scale, scale)
+    tempCtx.translate(-bounds.left - bounds.width / 2, -bounds.top - bounds.height / 2)
+
+    obj.clone((cloned: any) => {
+      cloned.set({ left: 0, top: 0, originX: 'left', originY: 'top' })
+    })
+    tempCtx.restore()
+
+    const dataUrl = obj.toDataURL({ format: 'png', multiplier: scale })
+    return dataUrl
+  } catch (e) {
+    return ''
+  }
+}
+
+function handleSelectionChange(selected: any[]) {
+  if (!canvas || !fabric) return
+  const unlockedObjects = selected.filter((obj: any) => {
+    if (!obj.id) return true
+    const data = editorStore.canvasObjects.find(o => o.id === obj.id)
+    return !data?.locked
+  })
+
+  const ids = unlockedObjects.map((o: any) => o.id).filter(Boolean)
+
+  if (unlockedObjects.length !== selected.length) {
+    if (unlockedObjects.length === 0) {
+      canvas.discardActiveObject()
+    } else if (unlockedObjects.length === 1) {
+      canvas.setActiveObject(unlockedObjects[0])
+    } else {
+      const activeSelection = new fabric.ActiveSelection(unlockedObjects, { canvas })
+      canvas.setActiveObject(activeSelection)
+    }
+    canvas.renderAll()
+  }
+
+  if (ids.length > 1) {
+    editorStore.selectObjects(ids)
+  } else if (ids.length === 1) {
+    editorStore.selectObject(ids[0])
+  } else {
+    editorStore.selectObject(null)
+  }
+}
+
+function updateObjectThumbnail(objId: string) {
+  if (!canvas) return
+  const obj = canvas.getObjects().find((o: any) => o.id === objId)
+  if (obj) {
+    try {
+      const thumb = obj.toDataURL({ format: 'png', multiplier: 40 / Math.max(obj.getBoundingRect().width, obj.getBoundingRect().height, 1) })
+      editorStore.updateObjectThumbnail(objId, thumb)
+    } catch (e) {
+      // ignore thumbnail generation errors
+    }
+  }
+}
+
+function applyLockState(objId: string, locked: boolean) {
+  if (!canvas || !fabric) return
+  const obj = canvas.getObjects().find((o: any) => o.id === objId)
+  if (obj) {
+    obj.set({
+      selectable: !locked,
+      evented: !locked,
+      hoverCursor: locked ? 'not-allowed' : 'move'
+    })
+
+    if (locked) {
+      const activeObj = canvas.getActiveObject()
+      if (activeObj) {
+        if (activeObj === obj) {
+          canvas.discardActiveObject()
+        } else if (activeObj.type === 'activeSelection') {
+          const activeSelection = activeObj as any
+          const objs = activeSelection.getObjects()
+          const hasLocked = objs.some((o: any) => o.id === objId)
+          if (hasLocked) {
+            const unlockedObjs = objs.filter((o: any) => o.id !== objId)
+            if (unlockedObjs.length === 0) {
+              canvas.discardActiveObject()
+            } else if (unlockedObjs.length === 1) {
+              canvas.setActiveObject(unlockedObjs[0])
+            } else {
+              const newSelection = new fabric.ActiveSelection(unlockedObjs, { canvas })
+              canvas.setActiveObject(newSelection)
+            }
+          }
+        }
+      }
+    }
+
+    canvas.renderAll()
+  }
+}
+
+function groupSelectedObjects() {
+  if (!canvas || !fabric) return
+  const activeObj = canvas.getActiveObject()
+  if (!activeObj || activeObj.type !== 'activeSelection') return
+
+  const activeSelection = activeObj as any
+  const childIds: string[] = activeSelection.getObjects().map((o: any) => o.id).filter(Boolean)
+  if (childIds.length < 2) return
+
+  const childDataMap: Record<string, CanvasObjectData> = {}
+  for (const childId of childIds) {
+    const data = editorStore.canvasObjects.find(o => o.id === childId)
+    if (data) childDataMap[childId] = { ...data }
+  }
+
+  activeSelection.toGroup()
+
+  const group = canvas.getActiveObject()
+  if (!group) return
+
+  const groupId = 'grp_' + Date.now()
+  group.set({ id: groupId })
+
+  const childDataList: CanvasObjectData[] = []
+  const groupChildren = group.getObjects()
+  for (const childObj of groupChildren) {
+    if (!childObj.id) continue
+    const originalData = childDataMap[childObj.id]
+    if (originalData) {
+      childDataList.push({
+        ...originalData,
+        x: childObj.left!,
+        y: childObj.top!,
+        scaleX: childObj.scaleX!,
+        scaleY: childObj.scaleY!,
+        angle: childObj.angle!,
+        opacity: childObj.opacity!
+      })
+    }
+  }
+
+  canvas.renderAll()
+
+  const thumbnail = generateThumbnail(group)
+
+  editorStore.groupObjects({
+    id: groupId,
+    type: 'group',
+    x: group.left!,
+    y: group.top!,
+    scaleX: group.scaleX!,
+    scaleY: group.scaleY!,
+    angle: group.angle!,
+    opacity: group.opacity!,
+    zIndex: canvas.getObjects().indexOf(group),
+    name: `组合 (${childIds.length})`,
+    isGroup: true,
+    groupChildIds: childIds,
+    groupChildren: childDataList,
+    thumbnail
+  })
+}
+
+function ungroupSelectedObject() {
+  if (!canvas || !fabric) return
+  const activeObj = canvas.getActiveObject()
+  if (!activeObj || activeObj.type !== 'group' || !activeObj.id) return
+
+  const groupId = activeObj.id
+  const groupData = editorStore.canvasObjects.find(o => o.id === groupId)
+  if (!groupData || !groupData.groupChildren) return
+
+  const group = activeObj as any
+  group.toActiveSelection()
+
+  const childObjects = canvas.getActiveObjects()
+  const restoredChildren: CanvasObjectData[] = []
+
+  for (const childData of groupData.groupChildren) {
+    const childObj = childObjects.find((o: any) => o.id === childData.id)
+    if (childObj) {
+      restoredChildren.push({
+        ...childData,
+        x: childObj.left!,
+        y: childObj.top!,
+        scaleX: childObj.scaleX!,
+        scaleY: childObj.scaleY!,
+        angle: childObj.angle!,
+        opacity: childObj.opacity!
+      })
+    }
+  }
+
+  canvas.discardActiveObject()
+  canvas.renderAll()
+
+  editorStore.ungroupObjects(groupId, restoredChildren)
+}
+
+function selectObjectsById(ids: string[]) {
+  if (!canvas || !fabric) return
+  if (ids.length === 0) {
+    canvas.discardActiveObject()
+    canvas.renderAll()
+    return
+  }
+  if (ids.length === 1) {
+    const obj = canvas.getObjects().find((o: any) => o.id === ids[0])
+    if (obj) {
+      canvas.setActiveObject(obj)
+      canvas.renderAll()
+    }
+    return
+  }
+  const objects = ids.map(id => canvas.getObjects().find((o: any) => o.id === id)).filter(Boolean)
+  if (objects.length > 0) {
+    const activeSelection = new fabric.ActiveSelection(objects, { canvas })
+    canvas.setActiveObject(activeSelection)
+    canvas.renderAll()
+  }
+}
+
+function refreshAllThumbnails() {
+  if (!canvas) return
+  const objects = canvas.getObjects()
+  objects.forEach((obj: any) => {
+    if (obj.id) {
+      try {
+        const rect = obj.getBoundingRect()
+        const multiplier = 40 / Math.max(rect.width, rect.height, 1)
+        const thumb = obj.toDataURL({ format: 'png', multiplier })
+        editorStore.updateObjectThumbnail(obj.id, thumb)
+      } catch (e) {
+        // ignore
+      }
+    }
+  })
+}
+
 defineExpose({
   get canvas() { return canvas },
   addMaterial,
@@ -939,7 +1293,13 @@ defineExpose({
   updateSelectedObject,
   applyFilters,
   replaceSelectedImage,
-  applyColorAdjustment: handleApplyColorAdjustment
+  applyColorAdjustment: handleApplyColorAdjustment,
+  groupSelectedObjects,
+  ungroupSelectedObject,
+  applyLockState,
+  updateObjectThumbnail,
+  refreshAllThumbnails,
+  selectObjectsById
 })
 
 onMounted(() => {
@@ -973,9 +1333,19 @@ watch(
 )
 
 watch(
+  () => editorStore.selectedObjectIds,
+  (newIds) => {
+    if (!canvas || !fabric) return
+    if (isSyncingFromStore) return
+    selectObjectsById(newIds)
+  }
+)
+
+watch(
   () => editorStore.selectedObjectId,
   (newId) => {
     if (!canvas || !fabric) return
+    if (isSyncingFromStore) return
     const objects = canvas.getObjects()
     const target = objects.find((o: any) => o.id === newId)
     if (target) {
