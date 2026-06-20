@@ -1,4 +1,6 @@
 import type { FilterConfig } from '~/types'
+import { useEditorStore } from '~/stores/editor'
+import { applyFiltersToSelected, applyFiltersToAllImages } from '~/utils/filterEffects'
 
 export function useFilters() {
   const editorStore = useEditorStore()
@@ -21,17 +23,19 @@ export function useFilters() {
     return editorStore.filters.filter(f => f.enabled)
   }
 
-  function applyAllToCanvas(canvas: any) {
-    const activeFilters = getActiveFilters()
-    for (const filter of activeFilters) {
-      console.log('Applying filter:', filter.type, 'intensity:', filter.intensity)
-    }
+  async function applyAllToSelected(fabric: any, canvas: any) {
+    await applyFiltersToSelected(fabric, canvas, editorStore.filters)
+  }
+
+  async function applyAllToAll(fabric: any, canvas: any) {
+    await applyFiltersToAllImages(fabric, canvas, editorStore.filters)
   }
 
   return {
     toggle,
     setIntensity,
     getActiveFilters,
-    applyAllToCanvas
+    applyAllToSelected,
+    applyAllToAll
   }
 }

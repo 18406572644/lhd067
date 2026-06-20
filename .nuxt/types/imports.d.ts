@@ -4,8 +4,9 @@ declare global {
   const abortNavigation: typeof import('../../node_modules/nuxt/dist/app/composables/router')['abortNavigation']
   const acceptHMRUpdate: typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['acceptHMRUpdate']
   const addRouteMiddleware: typeof import('../../node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']
-  const applyCanvasFilter: typeof import('../../utils/filterEffects')['applyCanvasFilter']
   const applyDiffuseEffect: typeof import('../../utils/imageProcess')['applyDiffuseEffect']
+  const applyFiltersToAllImages: typeof import('../../utils/filterEffects')['applyFiltersToAllImages']
+  const applyFiltersToSelected: typeof import('../../utils/filterEffects')['applyFiltersToSelected']
   const applyTextureEffect: typeof import('../../utils/imageProcess')['applyTextureEffect']
   const applyVintageEffect: typeof import('../../utils/imageProcess')['applyVintageEffect']
   const applyWatercolorEffect: typeof import('../../utils/imageProcess')['applyWatercolorEffect']
@@ -15,8 +16,10 @@ declare global {
   const clearNuxtData: typeof import('../../node_modules/nuxt/dist/app/composables/asyncData')['clearNuxtData']
   const clearNuxtState: typeof import('../../node_modules/nuxt/dist/app/composables/state')['clearNuxtState']
   const computed: typeof import('../../node_modules/vue')['computed']
+  const convertGroupToImage: typeof import('../../utils/filterEffects')['convertGroupToImage']
   const createDiffuseFilter: typeof import('../../utils/filterEffects')['createDiffuseFilter']
   const createError: typeof import('../../node_modules/nuxt/dist/app/composables/error')['createError']
+  const createFilterByType: typeof import('../../utils/filterEffects')['createFilterByType']
   const createProjectThumbnail: typeof import('../../utils/exportUtils')['createProjectThumbnail']
   const createTextureFilter: typeof import('../../utils/filterEffects')['createTextureFilter']
   const createVintageFilter: typeof import('../../utils/filterEffects')['createVintageFilter']
@@ -40,6 +43,7 @@ declare global {
   const downloadBlob: typeof import('../../utils/exportUtils')['downloadBlob']
   const effect: typeof import('../../node_modules/vue')['effect']
   const effectScope: typeof import('../../node_modules/vue')['effectScope']
+  const ensureImageObject: typeof import('../../utils/filterEffects')['ensureImageObject']
   const exportCanvasAsImage: typeof import('../../utils/exportUtils')['exportCanvasAsImage']
   const extractPlantOutline: typeof import('../../utils/imageProcess')['extractPlantOutline']
   const generateA4Layout: typeof import('../../utils/exportUtils')['generateA4Layout']
@@ -182,8 +186,9 @@ declare module 'vue' {
     readonly abortNavigation: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/router')['abortNavigation']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('../../node_modules/@pinia/nuxt/dist/runtime/composables')['acceptHMRUpdate']>
     readonly addRouteMiddleware: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']>
-    readonly applyCanvasFilter: UnwrapRef<typeof import('../../utils/filterEffects')['applyCanvasFilter']>
     readonly applyDiffuseEffect: UnwrapRef<typeof import('../../utils/imageProcess')['applyDiffuseEffect']>
+    readonly applyFiltersToAllImages: UnwrapRef<typeof import('../../utils/filterEffects')['applyFiltersToAllImages']>
+    readonly applyFiltersToSelected: UnwrapRef<typeof import('../../utils/filterEffects')['applyFiltersToSelected']>
     readonly applyTextureEffect: UnwrapRef<typeof import('../../utils/imageProcess')['applyTextureEffect']>
     readonly applyVintageEffect: UnwrapRef<typeof import('../../utils/imageProcess')['applyVintageEffect']>
     readonly applyWatercolorEffect: UnwrapRef<typeof import('../../utils/imageProcess')['applyWatercolorEffect']>
@@ -193,8 +198,10 @@ declare module 'vue' {
     readonly clearNuxtData: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/asyncData')['clearNuxtData']>
     readonly clearNuxtState: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/state')['clearNuxtState']>
     readonly computed: UnwrapRef<typeof import('../../node_modules/vue')['computed']>
+    readonly convertGroupToImage: UnwrapRef<typeof import('../../utils/filterEffects')['convertGroupToImage']>
     readonly createDiffuseFilter: UnwrapRef<typeof import('../../utils/filterEffects')['createDiffuseFilter']>
     readonly createError: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/error')['createError']>
+    readonly createFilterByType: UnwrapRef<typeof import('../../utils/filterEffects')['createFilterByType']>
     readonly createProjectThumbnail: UnwrapRef<typeof import('../../utils/exportUtils')['createProjectThumbnail']>
     readonly createTextureFilter: UnwrapRef<typeof import('../../utils/filterEffects')['createTextureFilter']>
     readonly createVintageFilter: UnwrapRef<typeof import('../../utils/filterEffects')['createVintageFilter']>
@@ -218,6 +225,7 @@ declare module 'vue' {
     readonly downloadBlob: UnwrapRef<typeof import('../../utils/exportUtils')['downloadBlob']>
     readonly effect: UnwrapRef<typeof import('../../node_modules/vue')['effect']>
     readonly effectScope: UnwrapRef<typeof import('../../node_modules/vue')['effectScope']>
+    readonly ensureImageObject: UnwrapRef<typeof import('../../utils/filterEffects')['ensureImageObject']>
     readonly exportCanvasAsImage: UnwrapRef<typeof import('../../utils/exportUtils')['exportCanvasAsImage']>
     readonly extractPlantOutline: UnwrapRef<typeof import('../../utils/imageProcess')['extractPlantOutline']>
     readonly generateA4Layout: UnwrapRef<typeof import('../../utils/exportUtils')['generateA4Layout']>

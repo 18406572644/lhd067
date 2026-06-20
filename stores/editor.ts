@@ -108,7 +108,16 @@ export const useEditorStore = defineStore('editor', {
     loadFromProject(project: DesignProject) {
       this.canvasObjects = project.canvasData ? JSON.parse(project.canvasData) : []
       this.labels = [...project.labels]
-      this.filters = project.filters.map(f => ({ ...f }))
+      if (project.filters && project.filters.length > 0) {
+        this.filters = project.filters.map(f => ({ ...f }))
+      } else {
+        this.filters = [
+          { id: 'watercolor', type: 'watercolor', intensity: 50, enabled: false },
+          { id: 'diffuse', type: 'diffuse', intensity: 40, enabled: false },
+          { id: 'texture', type: 'texture', intensity: 60, enabled: false },
+          { id: 'vintage', type: 'vintage', intensity: 35, enabled: false }
+        ]
+      }
       this.selectedObjectId = null
       this.isDirty = false
     },

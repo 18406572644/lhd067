@@ -31,7 +31,7 @@ export { useFilters } from '../composables/useFilters';
 export { useMaterials } from '../composables/useMaterials';
 export { useProject } from '../composables/useProject';
 export { generateA4Layout, exportCanvasAsImage, downloadBlob, createProjectThumbnail } from '../utils/exportUtils';
-export { createWatercolorFilter, createDiffuseFilter, createTextureFilter, createVintageFilter, applyCanvasFilter } from '../utils/filterEffects';
+export { createWatercolorFilter, createDiffuseFilter, createTextureFilter, createVintageFilter, convertGroupToImage, ensureImageObject, createFilterByType, applyFiltersToSelected, applyFiltersToAllImages } from '../utils/filterEffects';
 export { extractPlantOutline, removeBackground, applyWatercolorEffect, applyDiffuseEffect, applyTextureEffect, applyVintageEffect, imageFileToCanvas } from '../utils/imageProcess';
 export { useEditorStore } from '../stores/editor';
 export { useMaterialStore } from '../stores/material';

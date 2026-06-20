@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PlantMaterial, CanvasObjectData } from '~/types'
 import { useEditorStore } from '~/stores/editor'
+import { applyFiltersToSelected } from '~/utils/filterEffects'
 
 const emit = defineEmits<{
   'object-added': [object: any]
@@ -19,6 +20,7 @@ const initError = ref<string | null>(null)
 let canvas: any = null
 let fabric: any = null
 let resizeObserver: ResizeObserver | null = null
+let filterApplyTimeout: ReturnType<typeof setTimeout> | null = null
 
 async function waitForFabric(maxAttempts = 100, intervalMs = 50): Promise<any> {
   for (let i = 0; i < maxAttempts; i++) {
@@ -173,6 +175,8 @@ async function addMaterial(material: PlantMaterial, position?: { x: number; y: n
   canvas.add(group)
   canvas.setActiveObject(group)
   canvas.renderAll()
+  
+  editorStore.selectObject(group.id)
 
   emit('object-added', group)
 
@@ -220,6 +224,8 @@ async function addUploadedImage(dataUrl: string) {
   canvas.add(img)
   canvas.setActiveObject(img)
   canvas.renderAll()
+  
+  editorStore.selectObject(img.id)
 
   emit('object-added', img)
 
@@ -290,6 +296,24 @@ function updateSelectedObject(props: any) {
   }
 }
 
+async function applyFilters() {
+  if (!canvas || !fabric) return
+  
+  if (filterApplyTimeout) {
+    clearTimeout(filterApplyTimeout)
+  }
+  
+  filterApplyTimeout = setTimeout(async () => {
+    try {
+      await applyFiltersToSelected(fabric, canvas, editorStore.filters, (newId) => {
+        editorStore.selectObject(newId)
+      })
+    } catch (e) {
+      console.error('[FabricCanvas] Error applying filters:', e)
+    }
+  }, 50)
+}
+
 defineExpose({
   get canvas() { return canvas },
   addMaterial,
@@ -302,7 +326,8 @@ defineExpose({
   removeSelected,
   undo,
   redo,
-  updateSelectedObject
+  updateSelectedObject,
+  applyFilters
 })
 
 onMounted(() => {
@@ -314,6 +339,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   document.removeEventListener('keydown', handleKeyDown)
+  if (filterApplyTimeout) {
+    clearTimeout(filterApplyTimeout)
+  }
   canvas?.dispose()
 })
 
@@ -338,6 +366,14 @@ watch(
       canvas.renderAll()
     }
   }
+)
+
+watch(
+  () => editorStore.filters,
+  () => {
+    applyFilters()
+  },
+  { deep: true }
 )
 </script>
 
